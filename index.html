@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Next Auto - Full Management</title>
+    <title>Next Auto - Full Management with Invoices</title>
     <style>
         * {
             box-sizing: border-box;
@@ -218,6 +218,55 @@
             font-size: 0.7rem;
             margin: 0 2px;
         }
+        /* Invoice specific */
+        .invoice-container {
+            padding: 20px;
+            font-family: monospace;
+        }
+        .invoice-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .invoice-details {
+            margin: 20px 0;
+            border-top: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
+            padding: 10px 0;
+        }
+        .invoice-items {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .invoice-items th, .invoice-items td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        .invoice-total {
+            text-align: right;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .modal, .modal * {
+                visibility: visible;
+            }
+            .modal {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: auto;
+                background: white;
+            }
+            .no-print {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -235,6 +284,7 @@
     <div class="tabs">
         <button class="tab-btn active" data-tab="inventory">🚗 Inventory</button>
         <button class="tab-btn" data-tab="expenses">💰 Expenses</button>
+        <button class="tab-btn" data-tab="invoices">🧾 Invoices</button>
         <button class="tab-btn" data-tab="reports">📊 Reports</button>
     </div>
 
@@ -259,7 +309,7 @@
         </div>
     </div>
 
-    <!-- EXPENSES TAB -->
+    <!-- EXPENSES TAB (unchanged) -->
     <div id="expenses" class="tab-content">
         <div style="margin-bottom:20px; display:flex; gap:12px;">
             <button class="btn btn-primary" id="addExpenseBtn">+ Add Expense</button>
@@ -269,6 +319,19 @@
         <div class="table-wrapper">
             <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead>
             <tbody id="expensesTableBody"></tbody></table>
+        </div>
+    </div>
+
+    <!-- INVOICES TAB -->
+    <div id="invoices" class="tab-content">
+        <div class="stats" style="margin-bottom:20px;">
+            <div class="stat-card"><div class="stat-label">Total Sold Cars</div><div class="stat-value" id="totalSoldInvoices">0</div></div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead><tr><th>Date Sold</th><th>Make/Model</th><th>VIN</th><th>Buyer</th><th>Sell Price (¥)</th><th>Action</th></tr></thead>
+                <tbody id="invoicesTableBody"></tbody>
+            </table>
         </div>
     </div>
 
@@ -282,7 +345,7 @@
         <canvas id="trendChart" width="400" height="200" style="max-width:100%; background:white; border-radius:16px; padding:10px;"></canvas>
         <canvas id="categoryChart" width="400" height="200" style="max-width:100%; margin-top:20px; background:white; border-radius:16px; padding:10px;"></canvas>
     </div>
-    <footer>Next Auto - All features working | Data saved in browser</footer>
+    <footer>Next Auto - Invoices added | Data saved in browser</footer>
 </div>
 
 <!-- Car Modal -->
@@ -311,6 +374,17 @@
     <div class="flex-btns"><button class="btn btn-outline" id="closeModalBtn">Cancel</button><button class="btn btn-primary" id="saveCarBtn">Save</button></div>
 </div></div>
 
+<!-- Invoice Modal -->
+<div id="invoiceModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+        <div id="invoiceContent"></div>
+        <div class="flex-btns no-print">
+            <button class="btn btn-outline" id="closeInvoiceBtn">Close</button>
+            <button class="btn btn-primary" id="printInvoiceBtn">Print / Save PDF</button>
+        </div>
+    </div>
+</div>
+
 <!-- Expense Modal -->
 <div id="expenseModal" class="modal"><div class="modal-content"><h3>Add Expense</h3>
     <input type="date" id="expenseDate"><input type="text" id="expenseDesc" placeholder="Description">
@@ -331,7 +405,7 @@
         let currentSearch = "";
         let expenseSearchTerm = "";
 
-        // Column headers
+        // Column headers (added Invoice button)
         const columns = [
             "Make/Model", "Year", "VIN", "Vehicle No", "Auction Date", "Auction", "Exhibition No",
             "Grade", "Vehicle Amt", "Bid Fee", "Recycling", "Consumption Tax", "Land Transp", "Auto Tax",
@@ -386,7 +460,7 @@
         function saveCars() { localStorage.setItem("nextauto_cars", JSON.stringify(cars)); }
         function saveExpenses() { localStorage.setItem("nextauto_expenses", JSON.stringify(expenses)); }
 
-        // ---------- Render Inventory ----------
+        // ---------- Render Inventory (with Invoice button for sold cars) ----------
         function renderInventory() {
             const term = currentSearch.trim().toLowerCase();
             let filtered = cars.filter(c => JSON.stringify(c).toLowerCase().includes(term));
@@ -402,11 +476,14 @@
             for (let c of filtered) {
                 const statusBadge = c.status === "sold" ? `<span class="badge badge-sold">SOLD</span>` : `<span class="badge badge-available">AVAILABLE</span>`;
                 const profitShow = c.status === "sold" ? `<span class="profit-positive">¥${c.profit.toLocaleString('ja-JP')}</span>` : "—";
-                const actions = `
+                let actions = `
                     <button class="btn small-btn btn-warning" data-id="${c.id}" data-action="edit">Edit</button>
                     ${c.status === "available" ? `<button class="btn small-btn btn-success" data-id="${c.id}" data-action="sell">Sell</button>` : `<button class="btn small-btn btn-outline" disabled>Sold</button>`}
                     <button class="btn small-btn btn-danger" data-id="${c.id}" data-action="delete">Del</button>
                 `;
+                if (c.status === "sold") {
+                    actions += `<button class="btn small-btn btn-primary" data-id="${c.id}" data-action="invoice">Invoice</button>`;
+                }
                 html += `<tr>
                     <td>${escapeHtml(c.makeModel)}</td>
                     <td>${escapeHtml(c.year)}</td>
@@ -450,10 +527,15 @@
                 btn.removeEventListener('click', handleDelete);
                 btn.addEventListener('click', handleDelete);
             });
+            document.querySelectorAll("[data-action='invoice']").forEach(btn => {
+                btn.removeEventListener('click', handleInvoice);
+                btn.addEventListener('click', handleInvoice);
+            });
         }
         function handleEdit(e) { let id = e.currentTarget.getAttribute("data-id"); openEditModal(id); }
         function handleSell(e) { let id = e.currentTarget.getAttribute("data-id"); openSellModal(id); }
-        function handleDelete(e) { let id = e.currentTarget.getAttribute("data-id"); if (confirm("Delete this car permanently?")) { cars = cars.filter(c => c.id !== id); saveCars(); renderInventory(); renderReports(); } }
+        function handleDelete(e) { let id = e.currentTarget.getAttribute("data-id"); if (confirm("Delete this car permanently?")) { cars = cars.filter(c => c.id !== id); saveCars(); renderInventory(); renderReports(); renderInvoicesList(); } }
+        function handleInvoice(e) { let id = e.currentTarget.getAttribute("data-id"); showInvoice(id); }
 
         function updateStats() {
             const total = cars.length;
@@ -466,7 +548,72 @@
             document.getElementById("totalProfit").innerText = totalProfit.toLocaleString('ja-JP');
         }
 
-        // ---------- Expenses ----------
+        // ---------- Invoices List ----------
+        function renderInvoicesList() {
+            const soldCars = cars.filter(c => c.status === "sold");
+            document.getElementById("totalSoldInvoices").innerText = soldCars.length;
+            const tbody = document.getElementById("invoicesTableBody");
+            if (soldCars.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6">No sold cars yet</td></tr>`;
+                return;
+            }
+            let html = "";
+            for (let c of soldCars) {
+                html += `<tr>
+                    <td>${c.saleDate || "—"}</td>
+                    <td>${escapeHtml(c.makeModel)} (${escapeHtml(c.year)})</td>
+                    <td>${escapeHtml(c.vin)}</td>
+                    <td>${escapeHtml(c.buyer)}</td>
+                    <td>¥${c.sellPrice.toLocaleString('ja-JP')}</td>
+                    <td><button class="btn small-btn btn-primary" data-id="${c.id}" data-action="viewInvoice">View Invoice</button></td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+            document.querySelectorAll("[data-action='viewInvoice']").forEach(btn => {
+                btn.addEventListener('click', () => showInvoice(btn.getAttribute("data-id")));
+            });
+        }
+
+        // ---------- Invoice Generation ----------
+        function showInvoice(carId) {
+            const car = cars.find(c => c.id === carId);
+            if (!car || car.status !== "sold") return;
+            const invoiceHtml = `
+                <div class="invoice-container">
+                    <div class="invoice-header">
+                        <h2>Next Auto</h2>
+                        <p>〒455-0873 愛知県名古屋市港区春田野1丁目102番地<br>📞 0526556434 &nbsp; ✉️ Next.auto222@gmail.com</p>
+                        <h3>INVOICE</h3>
+                        <p>Invoice No: ${car.id.slice(-8)}<br>Date: ${new Date().toLocaleDateString('ja-JP')}</p>
+                    </div>
+                    <div class="invoice-details">
+                        <p><strong>Bill to:</strong> ${escapeHtml(car.buyer)}</p>
+                        <p><strong>Vehicle:</strong> ${escapeHtml(car.makeModel)} (${escapeHtml(car.year)})</p>
+                        <p><strong>VIN:</strong> ${escapeHtml(car.vin)} &nbsp; | &nbsp; <strong>Vehicle No:</strong> ${escapeHtml(car.vehicleNo)}</p>
+                        <p><strong>Sold Date:</strong> ${car.saleDate || "—"}</p>
+                    </div>
+                    <table class="invoice-items">
+                        <thead><tr><th>Description</th><th>Amount (¥)</th></tr></thead>
+                        <tbody>
+                            <tr><td>Selling Price</td><td>¥${car.sellPrice.toLocaleString('ja-JP')}</td></tr>
+                            ${car.consumptionTax ? `<tr><td>Consumption Tax (included)</td><td>¥${car.consumptionTax.toLocaleString('ja-JP')}</td></tr>` : ''}
+                            ${car.recycling ? `<tr><td>Recycling Fee</td><td>¥${car.recycling.toLocaleString('ja-JP')}</td></tr>` : ''}
+                            ${car.landTransport ? `<tr><td>Land Transportation</td><td>¥${car.landTransport.toLocaleString('ja-JP')}</td></tr>` : ''}
+                            ${car.autoTax ? `<tr><td>Automobile Tax etc.</td><td>¥${car.autoTax.toLocaleString('ja-JP')}</td></tr>` : ''}
+                        </tbody>
+                    </table>
+                    <div class="invoice-total">
+                        <p>Total: ¥${car.sellPrice.toLocaleString('ja-JP')}</p>
+                    </div>
+                    <hr>
+                    <p><em>Thank you for your business!</em></p>
+                </div>
+            `;
+            document.getElementById("invoiceContent").innerHTML = invoiceHtml;
+            document.getElementById("invoiceModal").style.display = "flex";
+        }
+
+        // ---------- Expenses (unchanged) ----------
         function renderExpenses() {
             let filtered = expenses.filter(e => expenseSearchTerm === "" || e.desc.toLowerCase().includes(expenseSearchTerm.toLowerCase()));
             const tbody = document.getElementById("expensesTableBody");
@@ -508,7 +655,6 @@
         }
 
         function updateCharts() {
-            // Last 30 days
             const last30 = [];
             for (let i = 29; i >= 0; i--) {
                 let d = new Date();
@@ -534,7 +680,6 @@
                 type: 'line',
                 data: { labels, datasets: [{ label: 'Car Profit (¥)', data: profitArr, borderColor: '#2b6e4e', fill: false }, { label: 'Expenses (¥)', data: expArr, borderColor: '#b23c1c', fill: false }] }
             });
-            // Category pie
             const catMap = new Map();
             expenses.forEach(e => catMap.set(e.category, (catMap.get(e.category) || 0) + e.amount));
             const ctx2 = document.getElementById("categoryChart").getContext("2d");
@@ -545,8 +690,8 @@
             });
         }
 
-        // ---------- Modal helpers ----------
-        function fillModal(car) {
+        // ---------- Modal helpers (unchanged) ----------
+        function fillModal(car) { /* same as before */ 
             document.getElementById("carMakeModel").value = car.makeModel || "";
             document.getElementById("carYear").value = car.year || "";
             document.getElementById("carVin").value = car.vin || "";
@@ -568,7 +713,7 @@
             document.getElementById("carBuyer").value = car.buyer || "";
         }
 
-        function openEditModal(carId) {
+        function openEditModal(carId) { /* same */ 
             const car = cars.find(c => c.id === carId);
             if (!car) return;
             editMode = true;
@@ -578,20 +723,19 @@
             document.getElementById("carModal").style.display = "flex";
         }
 
-        function openSellModal(carId) {
+        function openSellModal(carId) { /* same */ 
             const car = cars.find(c => c.id === carId);
             if (!car) return;
             editMode = true;
             editCarId = carId;
             fillModal(car);
-            // Clear sell price and buyer for quick entry
             document.getElementById("carSellPrice").value = "";
             document.getElementById("carBuyer").value = "";
             document.getElementById("modalTitle").innerText = "Sell Car (set sell price & buyer)";
             document.getElementById("carModal").style.display = "flex";
         }
 
-        function saveCarFromModal() {
+        function saveCarFromModal() { /* same logic but ensure invoice list updates */ 
             const makeModel = document.getElementById("carMakeModel").value.trim();
             const year = document.getElementById("carYear").value.trim();
             const vin = document.getElementById("carVin").value.trim();
@@ -623,7 +767,6 @@
                 if (idx !== -1) {
                     const oldCar = cars[idx];
                     carData.id = oldCar.id;
-                    // Determine status and profit
                     if (carData.sellPrice > 0 && carData.buyer) {
                         carData.status = "sold";
                         carData.profit = carData.sellPrice - carData.cost;
@@ -640,10 +783,10 @@
                     normalizeCars();
                     renderInventory();
                     renderReports();
+                    renderInvoicesList();
                     closeModal();
                 } else { alert("Car not found"); }
             } else {
-                // Add new car
                 carData.id = "car" + Date.now() + Math.random();
                 if (carData.sellPrice > 0 && carData.buyer) {
                     carData.status = "sold";
@@ -661,6 +804,7 @@
                 normalizeCars();
                 renderInventory();
                 renderReports();
+                renderInvoicesList();
                 closeModal();
             }
         }
@@ -671,7 +815,7 @@
             editCarId = null;
         }
 
-        // Expense modal
+        // Expense modal handlers
         function openExpenseModal() {
             document.getElementById("expenseModal").style.display = "flex";
             document.getElementById("expenseDate").valueAsDate = new Date();
@@ -690,8 +834,14 @@
         }
         function closeExpModal() { document.getElementById("expenseModal").style.display = "none"; }
 
+        // Invoice modal close & print
+        function closeInvoiceModal() { document.getElementById("invoiceModal").style.display = "none"; }
+        function printInvoice() {
+            window.print();
+        }
+
         function escapeHtml(s) { if (!s) return ""; return s.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
-        function renderAll() { renderInventory(); renderExpenses(); renderReports(); }
+        function renderAll() { renderInventory(); renderExpenses(); renderInvoicesList(); renderReports(); }
 
         // Tab switching
         document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -702,6 +852,7 @@
                 document.getElementById(btn.getAttribute("data-tab")).classList.add("active");
                 if (btn.getAttribute("data-tab") === "reports") renderReports();
                 if (btn.getAttribute("data-tab") === "expenses") renderExpenses();
+                if (btn.getAttribute("data-tab") === "invoices") renderInvoicesList();
             });
         });
 
@@ -722,7 +873,9 @@
         document.getElementById("clearSearchBtn").addEventListener("click", () => { document.getElementById("searchInput").value = ""; currentSearch = ""; renderInventory(); });
         document.getElementById("expenseSearch").addEventListener("input", e => { expenseSearchTerm = e.target.value; renderExpenses(); });
         document.getElementById("clearExpenseFilterBtn").addEventListener("click", () => { document.getElementById("expenseSearch").value = ""; expenseSearchTerm = ""; renderExpenses(); });
-        window.onclick = e => { if (e.target.classList.contains("modal")) { closeModal(); closeExpModal(); } };
+        document.getElementById("closeInvoiceBtn").addEventListener("click", closeInvoiceModal);
+        document.getElementById("printInvoiceBtn").addEventListener("click", printInvoice);
+        window.onclick = e => { if (e.target.classList.contains("modal")) { closeModal(); closeExpModal(); closeInvoiceModal(); } };
 
         loadAllData();
     })();
