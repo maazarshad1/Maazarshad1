@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Next Auto - Full Management</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .company-header {
+            background: linear-gradient(135deg, #1e2a3a, #0f1a24);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 24px;
+            margin-bottom: 25px;
+        }
+        .company-name {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .company-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .company-details span {
+            background: rgba(255,255,255,0.15);
+            padding: 5px 12px;
+            border-radius: 40px;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            background: #1e2a3a;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            flex: 1;
+            min-width: 160px;
+            padding: 18px 16px;
+            border-radius: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #5a6e7c;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1e2a3a;
+        }
+        .search-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 60px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 28px;
+            align-items: center;
+        }
+        .search-input {
+            flex: 3;
+            min-width: 180px;
+            padding: 12px 18px;
+            border: 1px solid #ccc;
+            border-radius: 40px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-primary { background: #0f2b3b; color: white; }
+        .btn-success { background: #2b6e4e; color: white; }
+        .btn-warning { background: #e67e22; color: white; }
+        .btn-danger { background: #b23c1c; color: white; }
+        .btn-outline { background: #f0f2f5; border: 1px solid #bdc4cc; }
+        .add-car-btn { background: #1e6f5c; color: white; margin-left: auto; }
+        .table-wrapper {
+            overflow-x: auto;
+            background: white;
+            border-radius: 24px;
+            padding: 4px 0;
+        }
+        table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th, td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #edf2f7;
+            text-align: left;
+            white-space: nowrap;
+        }
+        th {
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+        }
+        .badge {
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-sold { background: #ffedd5; color: #9b4a1a; }
+        .badge-available { background: #dcfce7; color: #15803d; }
+        .profit-positive { color: #2b6e4e; font-weight: bold; }
+        .modal {
+            display: none;
+            position: fixed;
+            top:0; left:0;
+            width:100%; height:100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            max-width: 800px;
+            width: 95%;
+            max-height: 90%;
+            overflow-y: auto;
+            border-radius: 32px;
+            padding: 24px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .modal-content input, .modal-content select {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 28px;
+        }
+        .flex-btns {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .report-summary {
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-around;
+        }
+        .report-card {
+            text-align: center;
+            flex: 1;
+        }
+        .report-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+        }
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6c7a89;
+        }
+        .small-btn {
+            padding: 4px 10px;
+            font-size: 0.7rem;
+            margin: 0 2px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="company-header">
+        <div class="company-name">Next Auto</div>
+        <div class="company-details">
+            <span>📍 〒455-0873 愛知県名古屋市港区春田野1丁目102番地</span>
+            <span>📞 0526556434</span>
+            <span>✉️ Next.auto222@gmail.com</span>
+            <span>💴 JPY (¥)</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="inventory">🚗 Inventory</button>
+        <button class="tab-btn" data-tab="expenses">💰 Expenses</button>
+        <button class="tab-btn" data-tab="reports">📊 Reports</button>
+    </div>
+
+    <!-- INVENTORY TAB -->
+    <div id="inventory" class="tab-content active">
+        <div class="stats">
+            <div class="stat-card"><div class="stat-label">Total Cars</div><div class="stat-value" id="totalCarsCount">0</div></div>
+            <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value" id="availableCount">0</div></div>
+            <div class="stat-card"><div class="stat-label">Sold</div><div class="stat-value" id="soldCount">0</div></div>
+            <div class="stat-card"><div class="stat-label">Total Profit (¥)</div><div class="stat-value" id="totalProfit">0</div></div>
+        </div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search any field...">
+            <button class="btn btn-outline" id="clearSearchBtn">Clear</button>
+            <button class="btn btn-primary add-car-btn" id="openAddModalBtn">+ Add Car</button>
+        </div>
+        <div class="table-wrapper">
+            <table id="carsTable">
+                <thead id="carsTableHead"></thead>
+                <tbody id="carsTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- EXPENSES TAB -->
+    <div id="expenses" class="tab-content">
+        <div style="margin-bottom:20px; display:flex; gap:12px;">
+            <button class="btn btn-primary" id="addExpenseBtn">+ Add Expense</button>
+            <input type="text" id="expenseSearch" class="search-input" placeholder="Search expense">
+            <button class="btn btn-outline" id="clearExpenseFilterBtn">Clear</button>
+        </div>
+        <div class="table-wrapper">
+            <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead>
+            <tbody id="expensesTableBody"></tbody></table>
+        </div>
+    </div>
+
+    <!-- REPORTS TAB -->
+    <div id="reports" class="tab-content">
+        <div class="report-summary">
+            <div class="report-card"><div class="report-label">💰 Car Profit</div><div class="report-number" id="reportCarProfit">¥0</div></div>
+            <div class="report-card"><div class="report-label">📉 Expenses</div><div class="report-number" id="reportTotalExpenses">¥0</div></div>
+            <div class="report-card"><div class="report-label">📈 Net Profit</div><div class="report-number" id="reportNetProfit">¥0</div></div>
+        </div>
+        <canvas id="trendChart" width="400" height="200" style="max-width:100%; background:white; border-radius:16px; padding:10px;"></canvas>
+        <canvas id="categoryChart" width="400" height="200" style="max-width:100%; margin-top:20px; background:white; border-radius:16px; padding:10px;"></canvas>
+    </div>
+    <footer>Next Auto - All features working | Data saved in browser</footer>
+</div>
+
+<!-- Car Modal -->
+<div id="carModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Add/Edit Car</h3>
+    <div class="form-grid">
+        <input type="text" id="carMakeModel" placeholder="Make & Model *">
+        <input type="text" id="carYear" placeholder="Year *">
+        <input type="text" id="carVin" placeholder="VIN *">
+        <input type="text" id="carVehicleNo" placeholder="Vehicle Number">
+        <input type="date" id="carDate" placeholder="Auction Date">
+        <input type="text" id="carAuction" placeholder="Auction">
+        <input type="text" id="carExhibitionNo" placeholder="Exhibition number">
+        <input type="text" id="carGrade" placeholder="Grade (e.g., 4, 4.5, S)">
+        <input type="number" id="carVehicleAmount" placeholder="Vehicle amount (¥)">
+        <input type="number" id="carBidFee" placeholder="Successful bid fee (¥)">
+        <input type="number" id="carRecycling" placeholder="Recycling (¥)">
+        <input type="number" id="carConsumptionTax" placeholder="Consumption tax (¥)">
+        <input type="number" id="carLandTransport" placeholder="Land transportation fee (¥)">
+        <input type="number" id="carAutoTax" placeholder="Automobile tax etc. (¥)">
+        <input type="text" id="carBuyPlace" placeholder="Buy place">
+        <input type="text" id="carSellPlace" placeholder="Sell place">
+        <input type="number" id="carCost" placeholder="Cost Price (¥) *">
+        <input type="number" id="carSellPrice" placeholder="Sell Price (¥)">
+        <input type="text" id="carBuyer" placeholder="Buyer name">
+    </div>
+    <div class="flex-btns"><button class="btn btn-outline" id="closeModalBtn">Cancel</button><button class="btn btn-primary" id="saveCarBtn">Save</button></div>
+</div></div>
+
+<!-- Expense Modal -->
+<div id="expenseModal" class="modal"><div class="modal-content"><h3>Add Expense</h3>
+    <input type="date" id="expenseDate"><input type="text" id="expenseDesc" placeholder="Description">
+    <select id="expenseCat"><option>Rent</option><option>Repairs</option><option>Marketing</option><option>Salaries</option><option>Other</option></select>
+    <input type="number" id="expenseAmount" placeholder="Amount (¥)">
+    <div class="flex-btns"><button class="btn btn-outline" id="closeExpenseModalBtn">Cancel</button><button class="btn btn-primary" id="saveExpenseBtn">Save</button></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    (function() {
+        let cars = [];
+        let expenses = [];
+        let profitChart = null;
+        let categoryChart = null;
+        let editMode = false;
+        let editCarId = null;
+        let currentSearch = "";
+        let expenseSearchTerm = "";
+
+        // Column headers
+        const columns = [
+            "Make/Model", "Year", "VIN", "Vehicle No", "Auction Date", "Auction", "Exhibition No",
+            "Grade", "Vehicle Amt", "Bid Fee", "Recycling", "Consumption Tax", "Land Transp", "Auto Tax",
+            "Buy Place", "Sell Place", "Cost (¥)", "Sell (¥)", "Status", "Buyer", "Profit", "Actions"
+        ];
+
+        // ---------- Data helpers ----------
+        function loadAllData() {
+            const storedCars = localStorage.getItem("nextauto_cars");
+            if (storedCars) {
+                cars = JSON.parse(storedCars);
+            } else {
+                cars = [
+                    { id: "c1", makeModel: "Toyota Prius", year: "2020", vin: "JTMBK33VX", vehicleNo: "愛知123", date: "2026-04-01",
+                      auction: "USS Tokyo", exhibitionNo: "EX123", grade: "4.5", vehicleAmount: 1800000, bidFee: 50000, recycling: 10000,
+                      consumptionTax: 180000, landTransport: 30000, autoTax: 25000, buyPlace: "Tokyo Auction", sellPlace: "Nagoya Shop",
+                      cost: 1850000, sellPrice: 2100000, buyer: "Tanaka", status: "sold", profit: 250000, saleDate: "2026-04-20" },
+                    { id: "c2", makeModel: "Honda Fit", year: "2018", vin: "HGF67890", vehicleNo: "名古屋500", date: "2026-04-05",
+                      auction: "TAA", exhibitionNo: "EX456", grade: "3.5", vehicleAmount: 920000, bidFee: 30000, recycling: 8000,
+                      consumptionTax: 92000, landTransport: 20000, autoTax: 15000, buyPlace: "Osaka Auction", sellPlace: "",
+                      cost: 950000, sellPrice: 0, buyer: "", status: "available", profit: 0 }
+                ];
+            }
+            const storedExp = localStorage.getItem("nextauto_expenses");
+            if (storedExp) {
+                expenses = JSON.parse(storedExp);
+            } else {
+                expenses = [{ id: "e1", date: "2026-04-15", desc: "Rent April", category: "Rent", amount: 120000 }];
+            }
+            normalizeCars();
+            saveCars();
+            saveExpenses();
+            renderAll();
+        }
+
+        function normalizeCars() {
+            const defaults = { vehicleNo: "", date: "", auction: "", exhibitionNo: "", grade: "", vehicleAmount: 0, bidFee: 0, recycling: 0, consumptionTax: 0, landTransport: 0, autoTax: 0, buyPlace: "", sellPlace: "", saleDate: "" };
+            for (let c of cars) {
+                for (let k in defaults) if (c[k] === undefined) c[k] = defaults[k];
+                if (c.sellPrice && c.sellPrice > 0 && c.buyer) {
+                    c.status = "sold";
+                    c.profit = c.sellPrice - c.cost;
+                } else {
+                    c.status = "available";
+                    c.sellPrice = 0;
+                    c.buyer = "";
+                    c.profit = 0;
+                    c.saleDate = "";
+                }
+            }
+        }
+        function saveCars() { localStorage.setItem("nextauto_cars", JSON.stringify(cars)); }
+        function saveExpenses() { localStorage.setItem("nextauto_expenses", JSON.stringify(expenses)); }
+
+        // ---------- Render Inventory ----------
+        function renderInventory() {
+            const term = currentSearch.trim().toLowerCase();
+            let filtered = cars.filter(c => JSON.stringify(c).toLowerCase().includes(term));
+            const theadRow = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
+            document.getElementById("carsTableHead").innerHTML = theadRow;
+            const tbody = document.getElementById("carsTableBody");
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="${columns.length}">No cars found</td></tr>`;
+                updateStats();
+                return;
+            }
+            let html = "";
+            for (let c of filtered) {
+                const statusBadge = c.status === "sold" ? `<span class="badge badge-sold">SOLD</span>` : `<span class="badge badge-available">AVAILABLE</span>`;
+                const profitShow = c.status === "sold" ? `<span class="profit-positive">¥${c.profit.toLocaleString('ja-JP')}</span>` : "—";
+                const actions = `
+                    <button class="btn small-btn btn-warning" data-id="${c.id}" data-action="edit">Edit</button>
+                    ${c.status === "available" ? `<button class="btn small-btn btn-success" data-id="${c.id}" data-action="sell">Sell</button>` : `<button class="btn small-btn btn-outline" disabled>Sold</button>`}
+                    <button class="btn small-btn btn-danger" data-id="${c.id}" data-action="delete">Del</button>
+                `;
+                html += `<tr>
+                    <td>${escapeHtml(c.makeModel)}</td>
+                    <td>${escapeHtml(c.year)}</td>
+                    <td>${escapeHtml(c.vin)}</td>
+                    <td>${escapeHtml(c.vehicleNo)}</td>
+                    <td>${c.date || "—"}</td>
+                    <td>${escapeHtml(c.auction)}</td>
+                    <td>${escapeHtml(c.exhibitionNo)}</td>
+                    <td>${escapeHtml(c.grade)}</td>
+                    <td>${c.vehicleAmount ? `¥${c.vehicleAmount.toLocaleString('ja-JP')}` : "—"}</td>
+                    <td>${c.bidFee ? `¥${c.bidFee.toLocaleString('ja-JP')}` : "—"}</td>
+                    <td>${c.recycling ? `¥${c.recycling.toLocaleString('ja-JP')}` : "—"}</td>
+                    <td>${c.consumptionTax ? `¥${c.consumptionTax.toLocaleString('ja-JP')}` : "—"}</td>
+                    <td>${c.landTransport ? `¥${c.landTransport.toLocaleString('ja-JP')}` : "—"}</td>
+                    <td>${c.autoTax ? `¥${c.autoTax.toLocaleString('ja-JP')}` : "—"}</td>
+                    <td>${escapeHtml(c.buyPlace)}</td>
+                    <td>${escapeHtml(c.sellPlace)}</td>
+                    <td>¥${c.cost.toLocaleString('ja-JP')}</td>
+                    <td>${c.sellPrice ? `¥${c.sellPrice.toLocaleString('ja-JP')}` : "—"}</td>
+                    <td>${statusBadge}</td>
+                    <td>${escapeHtml(c.buyer || "—")}</td>
+                    <td>${profitShow}</td>
+                    <td class="action-buttons">${actions}</td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+            attachInventoryEvents();
+            updateStats();
+        }
+
+        function attachInventoryEvents() {
+            document.querySelectorAll("[data-action='edit']").forEach(btn => {
+                btn.removeEventListener('click', handleEdit);
+                btn.addEventListener('click', handleEdit);
+            });
+            document.querySelectorAll("[data-action='sell']").forEach(btn => {
+                btn.removeEventListener('click', handleSell);
+                btn.addEventListener('click', handleSell);
+            });
+            document.querySelectorAll("[data-action='delete']").forEach(btn => {
+                btn.removeEventListener('click', handleDelete);
+                btn.addEventListener('click', handleDelete);
+            });
+        }
+        function handleEdit(e) { let id = e.currentTarget.getAttribute("data-id"); openEditModal(id); }
+        function handleSell(e) { let id = e.currentTarget.getAttribute("data-id"); openSellModal(id); }
+        function handleDelete(e) { let id = e.currentTarget.getAttribute("data-id"); if (confirm("Delete this car permanently?")) { cars = cars.filter(c => c.id !== id); saveCars(); renderInventory(); renderReports(); } }
+
+        function updateStats() {
+            const total = cars.length;
+            const avail = cars.filter(c => c.status === "available").length;
+            const sold = cars.filter(c => c.status === "sold").length;
+            const totalProfit = cars.reduce((s, c) => s + (c.profit > 0 ? c.profit : 0), 0);
+            document.getElementById("totalCarsCount").innerText = total;
+            document.getElementById("availableCount").innerText = avail;
+            document.getElementById("soldCount").innerText = sold;
+            document.getElementById("totalProfit").innerText = totalProfit.toLocaleString('ja-JP');
+        }
+
+        // ---------- Expenses ----------
+        function renderExpenses() {
+            let filtered = expenses.filter(e => expenseSearchTerm === "" || e.desc.toLowerCase().includes(expenseSearchTerm.toLowerCase()));
+            const tbody = document.getElementById("expensesTableBody");
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5">No expenses</td></tr>`;
+                return;
+            }
+            let html = "";
+            for (let e of filtered) {
+                html += `<tr>
+                    <td>${e.date}</td>
+                    <td>${escapeHtml(e.desc)}</td>
+                    <td>${e.category}</td>
+                    <td>¥${e.amount.toLocaleString('ja-JP')}</td>
+                    <td><button class="btn small-btn btn-danger" data-expid="${e.id}" data-action="delExp">Delete</button></td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+            document.querySelectorAll("[data-action='delExp']").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    let id = btn.getAttribute("data-expid");
+                    expenses = expenses.filter(ex => ex.id !== id);
+                    saveExpenses();
+                    renderExpenses();
+                    renderReports();
+                });
+            });
+        }
+
+        // ---------- Reports & Charts ----------
+        function renderReports() {
+            const carProfit = cars.reduce((s, c) => s + (c.profit > 0 ? c.profit : 0), 0);
+            const totalExp = expenses.reduce((s, e) => s + e.amount, 0);
+            const net = carProfit - totalExp;
+            document.getElementById("reportCarProfit").innerHTML = `¥${carProfit.toLocaleString('ja-JP')}`;
+            document.getElementById("reportTotalExpenses").innerHTML = `¥${totalExp.toLocaleString('ja-JP')}`;
+            document.getElementById("reportNetProfit").innerHTML = `¥${net.toLocaleString('ja-JP')}`;
+            updateCharts();
+        }
+
+        function updateCharts() {
+            // Last 30 days
+            const last30 = [];
+            for (let i = 29; i >= 0; i--) {
+                let d = new Date();
+                d.setDate(d.getDate() - i);
+                last30.push(d.toISOString().slice(0, 10));
+            }
+            let profitArr = new Array(30).fill(0);
+            let expArr = new Array(30).fill(0);
+            for (let exp of expenses) {
+                let idx = last30.indexOf(exp.date);
+                if (idx !== -1) expArr[idx] += exp.amount;
+            }
+            for (let c of cars) {
+                if (c.status === "sold" && c.saleDate) {
+                    let idx = last30.indexOf(c.saleDate);
+                    if (idx !== -1) profitArr[idx] += c.profit;
+                }
+            }
+            const labels = last30.map(d => d.slice(5));
+            const ctx = document.getElementById("trendChart").getContext("2d");
+            if (profitChart) profitChart.destroy();
+            profitChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets: [{ label: 'Car Profit (¥)', data: profitArr, borderColor: '#2b6e4e', fill: false }, { label: 'Expenses (¥)', data: expArr, borderColor: '#b23c1c', fill: false }] }
+            });
+            // Category pie
+            const catMap = new Map();
+            expenses.forEach(e => catMap.set(e.category, (catMap.get(e.category) || 0) + e.amount));
+            const ctx2 = document.getElementById("categoryChart").getContext("2d");
+            if (categoryChart) categoryChart.destroy();
+            categoryChart = new Chart(ctx2, {
+                type: 'pie',
+                data: { labels: Array.from(catMap.keys()), datasets: [{ data: Array.from(catMap.values()), backgroundColor: ['#1e6f5c', '#e9c46a', '#f4a261', '#e76f51', '#8ecae6'] }] }
+            });
+        }
+
+        // ---------- Modal helpers ----------
+        function fillModal(car) {
+            document.getElementById("carMakeModel").value = car.makeModel || "";
+            document.getElementById("carYear").value = car.year || "";
+            document.getElementById("carVin").value = car.vin || "";
+            document.getElementById("carVehicleNo").value = car.vehicleNo || "";
+            document.getElementById("carDate").value = car.date || "";
+            document.getElementById("carAuction").value = car.auction || "";
+            document.getElementById("carExhibitionNo").value = car.exhibitionNo || "";
+            document.getElementById("carGrade").value = car.grade || "";
+            document.getElementById("carVehicleAmount").value = car.vehicleAmount || "";
+            document.getElementById("carBidFee").value = car.bidFee || "";
+            document.getElementById("carRecycling").value = car.recycling || "";
+            document.getElementById("carConsumptionTax").value = car.consumptionTax || "";
+            document.getElementById("carLandTransport").value = car.landTransport || "";
+            document.getElementById("carAutoTax").value = car.autoTax || "";
+            document.getElementById("carBuyPlace").value = car.buyPlace || "";
+            document.getElementById("carSellPlace").value = car.sellPlace || "";
+            document.getElementById("carCost").value = car.cost || "";
+            document.getElementById("carSellPrice").value = car.sellPrice || "";
+            document.getElementById("carBuyer").value = car.buyer || "";
+        }
+
+        function openEditModal(carId) {
+            const car = cars.find(c => c.id === carId);
+            if (!car) return;
+            editMode = true;
+            editCarId = carId;
+            fillModal(car);
+            document.getElementById("modalTitle").innerText = "Edit Car";
+            document.getElementById("carModal").style.display = "flex";
+        }
+
+        function openSellModal(carId) {
+            const car = cars.find(c => c.id === carId);
+            if (!car) return;
+            editMode = true;
+            editCarId = carId;
+            fillModal(car);
+            // Clear sell price and buyer for quick entry
+            document.getElementById("carSellPrice").value = "";
+            document.getElementById("carBuyer").value = "";
+            document.getElementById("modalTitle").innerText = "Sell Car (set sell price & buyer)";
+            document.getElementById("carModal").style.display = "flex";
+        }
+
+        function saveCarFromModal() {
+            const makeModel = document.getElementById("carMakeModel").value.trim();
+            const year = document.getElementById("carYear").value.trim();
+            const vin = document.getElementById("carVin").value.trim();
+            if (!makeModel || !year || !vin) { alert("Make/Model, Year, VIN are required"); return; }
+
+            const carData = {
+                makeModel, year, vin,
+                vehicleNo: document.getElementById("carVehicleNo").value.trim(),
+                date: document.getElementById("carDate").value,
+                auction: document.getElementById("carAuction").value.trim(),
+                exhibitionNo: document.getElementById("carExhibitionNo").value.trim(),
+                grade: document.getElementById("carGrade").value.trim(),
+                vehicleAmount: parseFloat(document.getElementById("carVehicleAmount").value) || 0,
+                bidFee: parseFloat(document.getElementById("carBidFee").value) || 0,
+                recycling: parseFloat(document.getElementById("carRecycling").value) || 0,
+                consumptionTax: parseFloat(document.getElementById("carConsumptionTax").value) || 0,
+                landTransport: parseFloat(document.getElementById("carLandTransport").value) || 0,
+                autoTax: parseFloat(document.getElementById("carAutoTax").value) || 0,
+                buyPlace: document.getElementById("carBuyPlace").value.trim(),
+                sellPlace: document.getElementById("carSellPlace").value.trim(),
+                cost: parseFloat(document.getElementById("carCost").value),
+                sellPrice: parseFloat(document.getElementById("carSellPrice").value) || 0,
+                buyer: document.getElementById("carBuyer").value.trim(),
+            };
+            if (isNaN(carData.cost) || carData.cost <= 0) { alert("Cost Price required"); return; }
+
+            if (editMode && editCarId) {
+                const idx = cars.findIndex(c => c.id === editCarId);
+                if (idx !== -1) {
+                    const oldCar = cars[idx];
+                    carData.id = oldCar.id;
+                    // Determine status and profit
+                    if (carData.sellPrice > 0 && carData.buyer) {
+                        carData.status = "sold";
+                        carData.profit = carData.sellPrice - carData.cost;
+                        carData.saleDate = oldCar.saleDate || new Date().toISOString().slice(0, 10);
+                    } else {
+                        carData.status = "available";
+                        carData.sellPrice = 0;
+                        carData.buyer = "";
+                        carData.profit = 0;
+                        carData.saleDate = "";
+                    }
+                    cars[idx] = carData;
+                    saveCars();
+                    normalizeCars();
+                    renderInventory();
+                    renderReports();
+                    closeModal();
+                } else { alert("Car not found"); }
+            } else {
+                // Add new car
+                carData.id = "car" + Date.now() + Math.random();
+                if (carData.sellPrice > 0 && carData.buyer) {
+                    carData.status = "sold";
+                    carData.profit = carData.sellPrice - carData.cost;
+                    carData.saleDate = new Date().toISOString().slice(0, 10);
+                } else {
+                    carData.status = "available";
+                    carData.sellPrice = 0;
+                    carData.buyer = "";
+                    carData.profit = 0;
+                    carData.saleDate = "";
+                }
+                cars.push(carData);
+                saveCars();
+                normalizeCars();
+                renderInventory();
+                renderReports();
+                closeModal();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("carModal").style.display = "none";
+            editMode = false;
+            editCarId = null;
+        }
+
+        // Expense modal
+        function openExpenseModal() {
+            document.getElementById("expenseModal").style.display = "flex";
+            document.getElementById("expenseDate").valueAsDate = new Date();
+        }
+        function saveExpense() {
+            const date = document.getElementById("expenseDate").value;
+            const desc = document.getElementById("expenseDesc").value.trim();
+            const cat = document.getElementById("expenseCat").value;
+            const amt = parseFloat(document.getElementById("expenseAmount").value);
+            if (!date || !desc || isNaN(amt) || amt <= 0) { alert("Please fill all fields"); return; }
+            expenses.push({ id: "exp" + Date.now() + Math.random(), date, desc, category: cat, amount: amt });
+            saveExpenses();
+            renderExpenses();
+            renderReports();
+            document.getElementById("expenseModal").style.display = "none";
+        }
+        function closeExpModal() { document.getElementById("expenseModal").style.display = "none"; }
+
+        function escapeHtml(s) { if (!s) return ""; return s.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m])); }
+        function renderAll() { renderInventory(); renderExpenses(); renderReports(); }
+
+        // Tab switching
+        document.querySelectorAll(".tab-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+                document.getElementById(btn.getAttribute("data-tab")).classList.add("active");
+                if (btn.getAttribute("data-tab") === "reports") renderReports();
+                if (btn.getAttribute("data-tab") === "expenses") renderExpenses();
+            });
+        });
+
+        // Button listeners
+        document.getElementById("openAddModalBtn").addEventListener("click", () => {
+            editMode = false;
+            editCarId = null;
+            document.getElementById("modalTitle").innerText = "Add New Car";
+            fillModal({ makeModel: "", year: "", vin: "", vehicleNo: "", date: "", auction: "", exhibitionNo: "", grade: "", vehicleAmount: "", bidFee: "", recycling: "", consumptionTax: "", landTransport: "", autoTax: "", buyPlace: "", sellPlace: "", cost: "", sellPrice: "", buyer: "" });
+            document.getElementById("carModal").style.display = "flex";
+        });
+        document.getElementById("saveCarBtn").addEventListener("click", saveCarFromModal);
+        document.getElementById("closeModalBtn").addEventListener("click", closeModal);
+        document.getElementById("addExpenseBtn").addEventListener("click", openExpenseModal);
+        document.getElementById("saveExpenseBtn").addEventListener("click", saveExpense);
+        document.getElementById("closeExpenseModalBtn").addEventListener("click", closeExpModal);
+        document.getElementById("searchInput").addEventListener("input", e => { currentSearch = e.target.value; renderInventory(); });
+        document.getElementById("clearSearchBtn").addEventListener("click", () => { document.getElementById("searchInput").value = ""; currentSearch = ""; renderInventory(); });
+        document.getElementById("expenseSearch").addEventListener("input", e => { expenseSearchTerm = e.target.value; renderExpenses(); });
+        document.getElementById("clearExpenseFilterBtn").addEventListener("click", () => { document.getElementById("expenseSearch").value = ""; expenseSearchTerm = ""; renderExpenses(); });
+        window.onclick = e => { if (e.target.classList.contains("modal")) { closeModal(); closeExpModal(); } };
+
+        loadAllData();
+    })();
+</script>
+</body>
+</html>
