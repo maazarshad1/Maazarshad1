@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Next Auto - Login Protected</title>
+    <title>Next Auto - Fixed Expenses</title>
     <style>
+        /* (All existing styles - same as before) */
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 20px; }
         .container { max-width: 100%; overflow-x: auto; }
@@ -65,7 +66,7 @@
 </head>
 <body>
 
-<!-- LOGIN OVERLAY (email + password) -->
+<!-- LOGIN OVERLAY -->
 <div id="loginOverlay">
     <div class="login-card">
         <h2>Next Auto</h2>
@@ -77,7 +78,7 @@
     </div>
 </div>
 
-<!-- MAIN APP (hidden until correct login) -->
+<!-- MAIN APP -->
 <div id="mainApp" style="display:none;">
 <div class="container">
     <div class="company-header">
@@ -97,8 +98,9 @@
         <button class="tab-btn" data-tab="reports">📊 Reports</button>
     </div>
 
-    <!-- INVENTORY TAB -->
+    <!-- INVENTORY TAB (same as before, omitted for brevity but included in full code) -->
     <div id="inventory" class="tab-content active">
+        <!-- Same inventory content – keep from previous version -->
         <div class="stats">
             <div class="stat-card"><div class="stat-label">Total Cars</div><div class="stat-value" id="totalCarsCount">0</div></div>
             <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value" id="availableCount">0</div></div>
@@ -115,7 +117,7 @@
         </div>
     </div>
 
-    <!-- EXPENSES TAB -->
+    <!-- EXPENSES TAB (with debugging) -->
     <div id="expenses" class="tab-content">
         <div style="margin-bottom:20px; display:flex; gap:12px;">
             <button class="btn btn-primary" id="addExpenseBtn">+ Add Expense</button>
@@ -123,19 +125,22 @@
             <button class="btn btn-outline" id="clearExpenseFilterBtn">Clear</button>
         </div>
         <div class="table-wrapper">
-            <tr><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead><tbody id="expensesTableBody"></tbody></table>
+            <table>
+                <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead>
+                <tbody id="expensesTableBody"><tr><td colspan="5">Loading expenses...</td></tr></tbody>
+            </table>
         </div>
     </div>
 
-    <!-- INVOICES TAB -->
+    <!-- INVOICES TAB (simplified) -->
     <div id="invoices" class="tab-content">
         <div class="stats"><div class="stat-card"><div class="stat-label">Total Sold Cars</div><div class="stat-value" id="totalSoldInvoices">0</div></div></div>
         <div class="table-wrapper">
-            <table><thead><tr><th>Date Sold</th><th>Make/Model</th><th>VIN</th><th>Buyer</th><th>Sell Price (¥)</th><th>Action</th></tr></thead><tbody id="invoicesTableBody"></tbody></table>
+            <table><thead><tr><th>Date Sold</th><th>Make/Model</th><th>VIN</th><th>Buyer</th><th>Sell Price (¥)</th><th>Action</th></tr></thead><tbody id="invoicesTableBody"><tr><td colspan="6">No sold cars</td></tr></tbody></table>
         </div>
     </div>
 
-    <!-- REPORTS TAB -->
+    <!-- REPORTS TAB (simplified) -->
     <div id="reports" class="tab-content">
         <div class="report-summary">
             <div class="report-card"><div class="report-label">💰 Car Profit</div><div class="report-number" id="reportCarProfit">¥0</div></div>
@@ -145,49 +150,25 @@
         <canvas id="trendChart" width="400" height="200" style="max-width:100%; background:white; border-radius:16px; padding:10px;"></canvas>
         <canvas id="categoryChart" width="400" height="200" style="max-width:100%; margin-top:20px; background:white; border-radius:16px; padding:10px;"></canvas>
     </div>
-    <footer>Next Auto - Protected with email+password</footer>
+    <footer>Next Auto - Fixed Expenses Display</footer>
 </div>
 
 <!-- Modals (same as before) -->
-<div id="carModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Add/Edit Car</h3>
-    <div class="form-grid">
-        <input type="text" id="carMakeModel" placeholder="Make & Model *">
-        <input type="text" id="carYear" placeholder="Year *">
-        <input type="text" id="carVin" placeholder="VIN *">
-        <input type="text" id="carVehicleNo" placeholder="Vehicle Number">
-        <input type="date" id="carDate" placeholder="Auction Date">
-        <input type="text" id="carAuction" placeholder="Auction">
-        <input type="text" id="carExhibitionNo" placeholder="Exhibition number">
-        <input type="text" id="carGrade" placeholder="Grade (e.g., 4, 4.5, S)">
-        <input type="number" id="carVehicleAmount" placeholder="Vehicle amount (¥)">
-        <input type="number" id="carBidFee" placeholder="Successful bid fee (¥)">
-        <input type="number" id="carRecycling" placeholder="Recycling (¥)">
-        <input type="number" id="carConsumptionTax" placeholder="Consumption tax (¥)">
-        <input type="number" id="carLandTransport" placeholder="Land transportation fee (¥)">
-        <input type="number" id="carAutoTax" placeholder="Automobile tax etc. (¥)">
-        <input type="text" id="carBuyPlace" placeholder="Buy place">
-        <input type="text" id="carSellPlace" placeholder="Sell place">
-        <input type="number" id="carCost" placeholder="Cost Price (¥) *">
-        <input type="number" id="carSellPrice" placeholder="Sell Price (¥)">
-        <input type="text" id="carBuyer" placeholder="Buyer name">
-    </div>
-    <div class="flex-btns"><button class="btn btn-outline" id="closeModalBtn">Cancel</button><button class="btn btn-primary" id="saveCarBtn">Save</button></div>
-</div></div>
+<div id="carModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Add/Edit Car</h3><div class="form-grid"><input type="text" id="carMakeModel" placeholder="Make & Model *"><input type="text" id="carYear" placeholder="Year *"><input type="text" id="carVin" placeholder="VIN *"><input type="text" id="carVehicleNo" placeholder="Vehicle Number"><input type="date" id="carDate" placeholder="Auction Date"><input type="text" id="carAuction" placeholder="Auction"><input type="text" id="carExhibitionNo" placeholder="Exhibition number"><input type="text" id="carGrade" placeholder="Grade (e.g., 4, 4.5, S)"><input type="number" id="carVehicleAmount" placeholder="Vehicle amount (¥)"><input type="number" id="carBidFee" placeholder="Successful bid fee (¥)"><input type="number" id="carRecycling" placeholder="Recycling (¥)"><input type="number" id="carConsumptionTax" placeholder="Consumption tax (¥)"><input type="number" id="carLandTransport" placeholder="Land transportation fee (¥)"><input type="number" id="carAutoTax" placeholder="Automobile tax etc. (¥)"><input type="text" id="carBuyPlace" placeholder="Buy place"><input type="text" id="carSellPlace" placeholder="Sell place"><input type="number" id="carCost" placeholder="Cost Price (¥) *"><input type="number" id="carSellPrice" placeholder="Sell Price (¥)"><input type="text" id="carBuyer" placeholder="Buyer name"></div><div class="flex-btns"><button class="btn btn-outline" id="closeModalBtn">Cancel</button><button class="btn btn-primary" id="saveCarBtn">Save</button></div></div></div>
 
 <div id="invoiceModal" class="modal"><div class="modal-content" style="max-width:700px;"><div id="invoiceContent"></div><div class="flex-btns no-print"><button class="btn btn-outline" id="closeInvoiceBtn">Close</button><button class="btn btn-primary" id="printInvoiceBtn">Print / PDF</button></div></div></div>
 
 <div id="expenseModal" class="modal"><div class="modal-content"><h3>Add Expense</h3><input type="date" id="expenseDate"><input type="text" id="expenseDesc" placeholder="Description"><select id="expenseCat"><option>Rent</option><option>Repairs</option><option>Marketing</option><option>Salaries</option><option>Other</option></select><input type="number" id="expenseAmount" placeholder="Amount (¥)"><div class="flex-btns"><button class="btn btn-outline" id="closeExpenseModalBtn">Cancel</button><button class="btn btn-primary" id="saveExpenseBtn">Save</button></div></div></div>
-</div> <!-- end mainApp -->
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    // ========== HARDCODED CREDENTIALS ==========
+    // ========== CREDENTIALS ==========
     const VALID_EMAIL = "maazq12345678@gmail.com";
     const VALID_PASSWORD = "Nextauto";
-    // ===========================================
 
     // Login handling
     const overlay = document.getElementById('loginOverlay');
@@ -209,13 +190,10 @@
             loginPassword.value = '';
         }
     }
-
     loginBtn.addEventListener('click', checkLogin);
-    loginPassword.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') checkLogin();
-    });
+    loginPassword.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkLogin(); });
 
-    // ---------- Firebase config (working version) ----------
+    // Firebase config
     const firebaseConfig = {
         apiKey: "AIzaSyBNIBkueboNI7mpXw6lukweyGQruq3a_ro",
         authDomain: "new-nextauto.firebaseapp.com",
@@ -225,7 +203,6 @@
         appId: "1:1071844324394:web:43d958f772cf78af50ff53",
         measurementId: "G-M5NBXWVLQZ"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
@@ -235,9 +212,12 @@
     let currentSearch = "", expenseSearchTerm = "";
     const columns = ["Make/Model","Year","VIN","Vehicle No","Auction Date","Auction","Exhibition No","Grade","Vehicle Amt","Bid Fee","Recycling","Consumption Tax","Land Transp","Auto Tax","Buy Place","Sell Place","Cost (¥)","Sell (¥)","Status","Buyer","Profit","Actions"];
 
-    // Real‑time listeners (same as before)
     function initApp() {
+        console.log("App initializing...");
+
+        // Cars listener
         db.collection("cars").onSnapshot(snapshot => {
+            console.log("Cars snapshot received, size:", snapshot.size);
             cars = [];
             snapshot.forEach(doc => {
                 let c = doc.data();
@@ -252,24 +232,27 @@
             renderInventory();
             renderReports();
             renderInvoicesList();
-        });
+        }, err => console.error("Cars listener error:", err));
 
+        // Expenses listener with error logging
         db.collection("expenses").onSnapshot(snapshot => {
+            console.log("Expenses snapshot received, size:", snapshot.size);
             expenses = [];
             snapshot.forEach(doc => {
                 let e = doc.data();
                 e.id = doc.id;
                 e.amount = parseFloat(e.amount) || 0;
                 expenses.push(e);
+                console.log("Expense loaded:", e);
             });
             renderExpenses();
             renderReports();
-        });
+        }, err => console.error("Expenses listener error:", err));
 
         attachGlobalListeners();
     }
 
-    function normalizeCars() {
+    function normalizeCars() { /* same as before */ 
         const defaults = { vehicleNo:"", date:"", auction:"", exhibitionNo:"", grade:"", vehicleAmount:0, bidFee:0, recycling:0, consumptionTax:0, landTransport:0, autoTax:0, buyPlace:"", sellPlace:"", saleDate:"" };
         for (let c of cars) {
             for (let k in defaults) if (c[k] === undefined) c[k] = defaults[k];
@@ -304,7 +287,7 @@
     function renderInventory() {
         const term = currentSearch.toLowerCase();
         let filtered = cars.filter(c => JSON.stringify(c).toLowerCase().includes(term));
-        document.getElementById("carsTableHead").innerHTML = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}<tr>`;
+        document.getElementById("carsTableHead").innerHTML = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
         const tbody = document.getElementById("carsTableBody");
         if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="${columns.length}">No cars found</td></tr>`; updateStats(); return; }
         let html = "";
@@ -352,13 +335,19 @@
     }
 
     function renderExpenses() {
+        console.log("Rendering expenses, count:", expenses.length);
         let filtered = expenses.filter(e => expenseSearchTerm === "" || e.desc.toLowerCase().includes(expenseSearchTerm));
         const tbody = document.getElementById("expensesTableBody");
-        if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5">No expenses</td></tr>`; return; }
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5">No expenses found. Click + Add Expense to create one.</td></tr>`;
+            return;
+        }
         let html = "";
         for (let e of filtered) {
             html += `<tr>
-                <td>${e.date}</td><td>${escapeHtml(e.desc)}</td><td>${e.category}</td>
+                <td>${e.date}</td>
+                <td>${escapeHtml(e.desc)}</td>
+                <td>${e.category}</td>
                 <td>¥${e.amount.toLocaleString('ja-JP')}</td>
                 <td><button class="btn small-btn btn-danger" data-expid="${e.id}" data-action="delExp">Delete</button></td>
             </tr>`;
@@ -375,8 +364,10 @@
         let html = "";
         for (let c of soldCars) {
             html += `<tr>
-                <td>${c.saleDate || "—"}</td><td>${escapeHtml(c.makeModel)} (${escapeHtml(c.year)})</td>
-                <td>${escapeHtml(c.vin)}</td><td>${escapeHtml(c.buyer)}</td>
+                <td>${c.saleDate || "—"}</td>
+                <td>${escapeHtml(c.makeModel)} (${escapeHtml(c.year)})</td>
+                <td>${escapeHtml(c.vin)}</td>
+                <td>${escapeHtml(c.buyer)}</td>
                 <td>¥${c.sellPrice.toLocaleString('ja-JP')}</td>
                 <td><button class="btn small-btn btn-primary" data-id="${c.id}" data-action="viewInvoice">View Invoice</button></td>
             </tr>`;
@@ -527,6 +518,7 @@
         document.getElementById("expenseModal").style.display = "none";
         document.getElementById("expenseDesc").value = "";
         document.getElementById("expenseAmount").value = "";
+        // Immediately refresh expenses by triggering a quick re-render (the onSnapshot will do it)
     }
 
     function closeModal() { document.getElementById("carModal").style.display = "none"; editMode = false; editCarId = null; }
