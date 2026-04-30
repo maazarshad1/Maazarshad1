@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Next Auto - Shared Management</title>
+    <title>Next Auto - Login Protected</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 20px; }
@@ -49,10 +48,37 @@
         .report-number { font-size: 2.2rem; font-weight: 800; }
         footer { margin-top: 30px; text-align: center; font-size: 0.7rem; color: #6c7a89; }
         .small-btn { padding: 4px 10px; font-size: 0.7rem; margin: 0 2px; }
+        .login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #1e2a3a; display: flex; align-items: center; justify-content: center;
+            z-index: 2000;
+        }
+        .login-card {
+            background: white; padding: 40px; border-radius: 48px; width: 90%; max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center;
+        }
+        .login-card input { width: 100%; padding: 14px; margin: 12px 0; border: 1px solid #ccc; border-radius: 40px; font-size: 1rem; }
+        .login-card h2 { margin-bottom: 20px; color: #1e2a3a; }
+        .error-msg { color: #b23c1c; margin-top: 10px; font-size: 0.9rem; }
         @media print { body * { visibility: hidden; } .modal, .modal * { visibility: visible; } .modal { position: absolute; top: 0; left: 0; width: 100%; background: white; } .no-print { display: none; } }
     </style>
 </head>
 <body>
+
+<!-- LOGIN OVERLAY (email + password) -->
+<div id="loginOverlay">
+    <div class="login-card">
+        <h2>Next Auto</h2>
+        <p>Enter credentials to access</p>
+        <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
+        <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+        <button id="loginBtn" class="btn btn-primary" style="width:100%;">Login</button>
+        <div id="loginError" class="error-msg"></div>
+    </div>
+</div>
+
+<!-- MAIN APP (hidden until correct login) -->
+<div id="mainApp" style="display:none;">
 <div class="container">
     <div class="company-header">
         <div class="company-name">Next Auto</div>
@@ -97,7 +123,7 @@
             <button class="btn btn-outline" id="clearExpenseFilterBtn">Clear</button>
         </div>
         <div class="table-wrapper">
-            <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead><tbody id="expensesTableBody"></tbody></table>
+            <tr><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead><tbody id="expensesTableBody"></tbody></table>
         </div>
     </div>
 
@@ -119,10 +145,10 @@
         <canvas id="trendChart" width="400" height="200" style="max-width:100%; background:white; border-radius:16px; padding:10px;"></canvas>
         <canvas id="categoryChart" width="400" height="200" style="max-width:100%; margin-top:20px; background:white; border-radius:16px; padding:10px;"></canvas>
     </div>
-    <footer>Next Auto - Real‑time shared data (no login)</footer>
+    <footer>Next Auto - Protected with email+password</footer>
 </div>
 
-<!-- Car Modal -->
+<!-- Modals (same as before) -->
 <div id="carModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Add/Edit Car</h3>
     <div class="form-grid">
         <input type="text" id="carMakeModel" placeholder="Make & Model *">
@@ -148,18 +174,48 @@
     <div class="flex-btns"><button class="btn btn-outline" id="closeModalBtn">Cancel</button><button class="btn btn-primary" id="saveCarBtn">Save</button></div>
 </div></div>
 
-<!-- Invoice Modal -->
 <div id="invoiceModal" class="modal"><div class="modal-content" style="max-width:700px;"><div id="invoiceContent"></div><div class="flex-btns no-print"><button class="btn btn-outline" id="closeInvoiceBtn">Close</button><button class="btn btn-primary" id="printInvoiceBtn">Print / PDF</button></div></div></div>
 
-<!-- Expense Modal -->
 <div id="expenseModal" class="modal"><div class="modal-content"><h3>Add Expense</h3><input type="date" id="expenseDate"><input type="text" id="expenseDesc" placeholder="Description"><select id="expenseCat"><option>Rent</option><option>Repairs</option><option>Marketing</option><option>Salaries</option><option>Other</option></select><input type="number" id="expenseAmount" placeholder="Amount (¥)"><div class="flex-btns"><button class="btn btn-outline" id="closeExpenseModalBtn">Cancel</button><button class="btn btn-primary" id="saveExpenseBtn">Save</button></div></div></div>
+</div> <!-- end mainApp -->
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    // ========== YOUR FIREBASE CONFIG (from new-nextauto project) ==========
+    // ========== HARDCODED CREDENTIALS ==========
+    const VALID_EMAIL = "maazq12345678@gmail.com";
+    const VALID_PASSWORD = "Nextauto";
+    // ===========================================
+
+    // Login handling
+    const overlay = document.getElementById('loginOverlay');
+    const mainApp = document.getElementById('mainApp');
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginError = document.getElementById('loginError');
+
+    function checkLogin() {
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
+        if (email === VALID_EMAIL && password === VALID_PASSWORD) {
+            overlay.style.display = 'none';
+            mainApp.style.display = 'block';
+            initApp();
+        } else {
+            loginError.innerText = 'Invalid email or password. Try again.';
+            loginPassword.value = '';
+        }
+    }
+
+    loginBtn.addEventListener('click', checkLogin);
+    loginPassword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') checkLogin();
+    });
+
+    // ---------- Firebase config (working version) ----------
     const firebaseConfig = {
         apiKey: "AIzaSyBNIBkueboNI7mpXw6lukweyGQruq3a_ro",
         authDomain: "new-nextauto.firebaseapp.com",
@@ -169,47 +225,49 @@
         appId: "1:1071844324394:web:43d958f772cf78af50ff53",
         measurementId: "G-M5NBXWVLQZ"
     };
-    // ================================================================
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let cars = [];
-    let expenses = [];
+    let cars = [], expenses = [];
     let profitChart = null, categoryChart = null;
     let editMode = false, editCarId = null;
     let currentSearch = "", expenseSearchTerm = "";
     const columns = ["Make/Model","Year","VIN","Vehicle No","Auction Date","Auction","Exhibition No","Grade","Vehicle Amt","Bid Fee","Recycling","Consumption Tax","Land Transp","Auto Tax","Buy Place","Sell Place","Cost (¥)","Sell (¥)","Status","Buyer","Profit","Actions"];
 
-    // Real‑time listeners
-    db.collection("cars").onSnapshot(snapshot => {
-        cars = [];
-        snapshot.forEach(doc => {
-            let c = doc.data();
-            c.id = doc.id;
-            for (let k of ["vehicleAmount","bidFee","recycling","consumptionTax","landTransport","autoTax","cost","sellPrice","profit"]) {
-                if (c[k] === undefined) c[k] = 0;
-                else c[k] = parseFloat(c[k]);
-            }
-            cars.push(c);
+    // Real‑time listeners (same as before)
+    function initApp() {
+        db.collection("cars").onSnapshot(snapshot => {
+            cars = [];
+            snapshot.forEach(doc => {
+                let c = doc.data();
+                c.id = doc.id;
+                for (let k of ["vehicleAmount","bidFee","recycling","consumptionTax","landTransport","autoTax","cost","sellPrice","profit"]) {
+                    if (c[k] === undefined) c[k] = 0;
+                    else c[k] = parseFloat(c[k]);
+                }
+                cars.push(c);
+            });
+            normalizeCars();
+            renderInventory();
+            renderReports();
+            renderInvoicesList();
         });
-        normalizeCars();
-        renderInventory();
-        renderReports();
-        renderInvoicesList();
-    });
 
-    db.collection("expenses").onSnapshot(snapshot => {
-        expenses = [];
-        snapshot.forEach(doc => {
-            let e = doc.data();
-            e.id = doc.id;
-            e.amount = parseFloat(e.amount) || 0;
-            expenses.push(e);
+        db.collection("expenses").onSnapshot(snapshot => {
+            expenses = [];
+            snapshot.forEach(doc => {
+                let e = doc.data();
+                e.id = doc.id;
+                e.amount = parseFloat(e.amount) || 0;
+                expenses.push(e);
+            });
+            renderExpenses();
+            renderReports();
         });
-        renderExpenses();
-        renderReports();
-    });
+
+        attachGlobalListeners();
+    }
 
     function normalizeCars() {
         const defaults = { vehicleNo:"", date:"", auction:"", exhibitionNo:"", grade:"", vehicleAmount:0, bidFee:0, recycling:0, consumptionTax:0, landTransport:0, autoTax:0, buyPlace:"", sellPlace:"", saleDate:"" };
@@ -246,9 +304,9 @@
     function renderInventory() {
         const term = currentSearch.toLowerCase();
         let filtered = cars.filter(c => JSON.stringify(c).toLowerCase().includes(term));
-        document.getElementById("carsTableHead").innerHTML = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}</td>`;
+        document.getElementById("carsTableHead").innerHTML = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}<tr>`;
         const tbody = document.getElementById("carsTableBody");
-        if (filtered.length === 0) { tbody.innerHTML = `<td><td colspan="${columns.length}">No cars found</td></tr>`; updateStats(); return; }
+        if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="${columns.length}">No cars found</td></tr>`; updateStats(); return; }
         let html = "";
         for (let c of filtered) {
             const statusBadge = c.status === "sold" ? `<span class="badge badge-sold">SOLD</span>` : `<span class="badge badge-available">AVAILABLE</span>`;
@@ -299,7 +357,11 @@
         if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5">No expenses</td></tr>`; return; }
         let html = "";
         for (let e of filtered) {
-            html += `<tr><td>${e.date}</td><td>${escapeHtml(e.desc)}</td><td>${e.category}</td><td>¥${e.amount.toLocaleString('ja-JP')}</td><td><button class="btn small-btn btn-danger" data-expid="${e.id}" data-action="delExp">Delete</button></td></tr>`;
+            html += `<tr>
+                <td>${e.date}</td><td>${escapeHtml(e.desc)}</td><td>${e.category}</td>
+                <td>¥${e.amount.toLocaleString('ja-JP')}</td>
+                <td><button class="btn small-btn btn-danger" data-expid="${e.id}" data-action="delExp">Delete</button></td>
+            </tr>`;
         }
         tbody.innerHTML = html;
         document.querySelectorAll("[data-action='delExp']").forEach(btn => btn.onclick = () => deleteExpenseFromFirestore(btn.dataset.expid));
@@ -312,7 +374,12 @@
         if (soldCars.length === 0) { tbody.innerHTML = `<tr><td colspan="6">No sold cars</td></tr>`; return; }
         let html = "";
         for (let c of soldCars) {
-            html += `<tr><td>${c.saleDate || "—"}</td><td>${escapeHtml(c.makeModel)} (${escapeHtml(c.year)})</td><td>${escapeHtml(c.vin)}</td><td>${escapeHtml(c.buyer)}</td><td>¥${c.sellPrice.toLocaleString('ja-JP')}</td><td><button class="btn small-btn btn-primary" data-id="${c.id}" data-action="viewInvoice">View Invoice</button></td></tr>`;
+            html += `<tr>
+                <td>${c.saleDate || "—"}</td><td>${escapeHtml(c.makeModel)} (${escapeHtml(c.year)})</td>
+                <td>${escapeHtml(c.vin)}</td><td>${escapeHtml(c.buyer)}</td>
+                <td>¥${c.sellPrice.toLocaleString('ja-JP')}</td>
+                <td><button class="btn small-btn btn-primary" data-id="${c.id}" data-action="viewInvoice">View Invoice</button></td>
+            </tr>`;
         }
         tbody.innerHTML = html;
         document.querySelectorAll("[data-action='viewInvoice']").forEach(btn => btn.onclick = () => showInvoice(btn.dataset.id));
@@ -468,31 +535,31 @@
     function printInvoice() { window.print(); }
     function escapeHtml(s) { if (!s) return ""; return s.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
 
-    // Tab switching
-    document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
-        document.getElementById(btn.dataset.tab).classList.add("active");
-        if (btn.dataset.tab === "reports") renderReports();
-        if (btn.dataset.tab === "expenses") renderExpenses();
-        if (btn.dataset.tab === "invoices") renderInvoicesList();
-    }));
+    function attachGlobalListeners() {
+        document.querySelectorAll(".tab-btn").forEach(btn => btn.addEventListener("click", () => {
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+            document.getElementById(btn.dataset.tab).classList.add("active");
+            if (btn.dataset.tab === "reports") renderReports();
+            if (btn.dataset.tab === "expenses") renderExpenses();
+            if (btn.dataset.tab === "invoices") renderInvoicesList();
+        }));
 
-    document.getElementById("openAddModalBtn").onclick = () => { editMode=false; editCarId=null; fillModal({}); document.getElementById("modalTitle").innerText="Add New Car"; document.getElementById("carModal").style.display="flex"; };
-    document.getElementById("saveCarBtn").onclick = saveCarFromModal;
-    document.getElementById("closeModalBtn").onclick = closeModal;
-    document.getElementById("addExpenseBtn").onclick = () => { document.getElementById("expenseModal").style.display="flex"; document.getElementById("expenseDate").valueAsDate=new Date(); };
-    document.getElementById("saveExpenseBtn").onclick = saveExpenseModal;
-    document.getElementById("closeExpenseModalBtn").onclick = closeExpModal;
-    document.getElementById("searchInput").oninput = e => { currentSearch = e.target.value; renderInventory(); };
-    document.getElementById("clearSearchBtn").onclick = () => { document.getElementById("searchInput").value=""; currentSearch=""; renderInventory(); };
-    document.getElementById("expenseSearch").oninput = e => { expenseSearchTerm = e.target.value; renderExpenses(); };
-    document.getElementById("clearExpenseFilterBtn").onclick = () => { document.getElementById("expenseSearch").value=""; expenseSearchTerm=""; renderExpenses(); };
-    document.getElementById("closeInvoiceBtn").onclick = closeInvoiceModal;
-    document.getElementById("printInvoiceBtn").onclick = printInvoice;
-    window.onclick = e => { if (e.target.classList.contains("modal")) { closeModal(); closeExpModal(); closeInvoiceModal(); } };
+        document.getElementById("openAddModalBtn").onclick = () => { editMode=false; editCarId=null; fillModal({}); document.getElementById("modalTitle").innerText="Add New Car"; document.getElementById("carModal").style.display="flex"; };
+        document.getElementById("saveCarBtn").onclick = saveCarFromModal;
+        document.getElementById("closeModalBtn").onclick = closeModal;
+        document.getElementById("addExpenseBtn").onclick = () => { document.getElementById("expenseModal").style.display="flex"; document.getElementById("expenseDate").valueAsDate=new Date(); };
+        document.getElementById("saveExpenseBtn").onclick = saveExpenseModal;
+        document.getElementById("closeExpenseModalBtn").onclick = closeExpModal;
+        document.getElementById("searchInput").oninput = e => { currentSearch = e.target.value; renderInventory(); };
+        document.getElementById("clearSearchBtn").onclick = () => { document.getElementById("searchInput").value=""; currentSearch=""; renderInventory(); };
+        document.getElementById("expenseSearch").oninput = e => { expenseSearchTerm = e.target.value; renderExpenses(); };
+        document.getElementById("clearExpenseFilterBtn").onclick = () => { document.getElementById("expenseSearch").value=""; expenseSearchTerm=""; renderExpenses(); };
+        document.getElementById("closeInvoiceBtn").onclick = closeInvoiceModal;
+        document.getElementById("printInvoiceBtn").onclick = printInvoice;
+        window.onclick = e => { if (e.target.classList.contains("modal")) { closeModal(); closeExpModal(); closeInvoiceModal(); } };
+    }
 </script>
 </body>
 </html>
-    
