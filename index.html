@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Next Auto - Secure Login</title>
+    <title>Next Auto - Secure Management</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 20px; }
@@ -48,7 +48,6 @@
         .report-number { font-size: 2.2rem; font-weight: 800; }
         footer { margin-top: 30px; text-align: center; font-size: 0.7rem; color: #6c7a89; }
         .small-btn { padding: 4px 10px; font-size: 0.7rem; margin: 0 2px; }
-        /* Login screen styles */
         #loginScreen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #1e2a3a; display: flex; align-items: center; justify-content: center;
@@ -58,10 +57,7 @@
             background: white; padding: 40px; border-radius: 48px; width: 90%; max-width: 400px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.2); text-align: center;
         }
-        .login-card input {
-            width: 100%; padding: 14px; margin: 12px 0; border: 1px solid #ccc;
-            border-radius: 40px; font-size: 1rem;
-        }
+        .login-card input { width: 100%; padding: 14px; margin: 12px 0; border: 1px solid #ccc; border-radius: 40px; font-size: 1rem; }
         .login-card h2 { margin-bottom: 20px; color: #1e2a3a; }
         .error-msg { color: #b23c1c; margin-top: 10px; font-size: 0.9rem; }
         .logout-btn { background: #b23c1c; color: white; border: none; padding: 6px 14px; border-radius: 40px; cursor: pointer; margin-left: 15px; }
@@ -150,10 +146,10 @@
         <canvas id="trendChart" width="400" height="200" style="max-width:100%; background:white; border-radius:16px; padding:10px;"></canvas>
         <canvas id="categoryChart" width="400" height="200" style="max-width:100%; margin-top:20px; background:white; border-radius:16px; padding:10px;"></canvas>
     </div>
-    <footer>Next Auto - Secure Login Enabled</footer>
+    <footer>Next Auto - Secure real‑time management</footer>
 </div>
 
-<!-- All modals (same as before) -->
+<!-- All modals -->
 <div id="carModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Add/Edit Car</h3>
     <div class="form-grid">
         <input type="text" id="carMakeModel" placeholder="Make & Model *">
@@ -190,16 +186,19 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    // Firebase config (already correct)
+    // ===== CORRECTED FIREBASE CONFIG (apiKey fixed) =====
     const firebaseConfig = {
-        apiKey: "AIzaSyBNIBkueboNI7mpXw6LukweyGQruq3a_ro",
+        apiKey: "AIzaSyBNIBkueboNI7mpXw6lukweyGQruq3a_ro",
         authDomain: "new-nextauto.firebaseapp.com",
+        databaseURL: "https://new-nextauto-default-rtdb.firebaseio.com",
         projectId: "new-nextauto",
         storageBucket: "new-nextauto.firebasestorage.app",
         messagingSenderId: "1071844324394",
-        appId: "1:1071844324394:web:98217e8f6442ec850ff53",
-        measurementId: "G-EH3ZEYE4HZ"
+        appId: "1:1071844324394:web:43d958f772cf78af50ff53",
+        measurementId: "G-M5NBXWVLQZ"
     };
+    // ====================================================
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -213,22 +212,18 @@
     const loginError = document.getElementById('loginError');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Check if user is already logged in
+    // Check auth state
     auth.onAuthStateChanged(user => {
         if (user) {
-            // User is signed in
             loginScreen.style.display = 'none';
             mainApp.style.display = 'block';
-            // Initialize the app (load Firestore data)
             initApp();
         } else {
-            // No user, show login
             loginScreen.style.display = 'flex';
             mainApp.style.display = 'none';
         }
     });
 
-    // Login button click
     loginBtn.addEventListener('click', async () => {
         const email = loginEmail.value.trim();
         const password = loginPassword.value;
@@ -238,19 +233,16 @@
         }
         try {
             await auth.signInWithEmailAndPassword(email, password);
-            // onAuthStateChanged will handle showing app
         } catch (err) {
             loginError.innerText = 'Login failed: ' + err.message;
         }
     });
 
-    // Logout button
     logoutBtn.addEventListener('click', async () => {
         await auth.signOut();
-        // onAuthStateChanged will show login screen
     });
 
-    // ------------------- APP LOGIC (same as before, but now inside initApp) -------------------
+    // ------------------- APP LOGIC -------------------
     let cars = [], expenses = [];
     let profitChart = null, categoryChart = null;
     let editMode = false, editCarId = null;
@@ -258,7 +250,6 @@
     const columns = ["Make/Model","Year","VIN","Vehicle No","Auction Date","Auction","Exhibition No","Grade","Vehicle Amt","Bid Fee","Recycling","Consumption Tax","Land Transp","Auto Tax","Buy Place","Sell Place","Cost (¥)","Sell (¥)","Status","Buyer","Profit","Actions"];
 
     function initApp() {
-        // Real‑time listeners
         db.collection("cars").onSnapshot(snapshot => {
             cars = [];
             snapshot.forEach(doc => {
@@ -288,7 +279,6 @@
             renderReports();
         });
 
-        // Attach all UI event listeners (same as before)
         attachGlobalListeners();
     }
 
