@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Next Auto - Simplified Management</title>
+    <title>Next Auto - Profit Tracking</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #f0f2f5; margin: 0; padding: 20px; }
@@ -37,6 +37,8 @@
         .badge { padding: 4px 12px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; }
         .badge-sold { background: #ffedd5; color: #9b4a1a; }
         .badge-available { background: #dcfce7; color: #15803d; }
+        .profit-positive { color: #2b6e4e; font-weight: bold; }
+        .profit-negative { color: #b23c1c; font-weight: bold; }
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: white; max-width: 700px; width: 95%; max-height: 90%; overflow-y: auto; border-radius: 32px; padding: 24px; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -96,13 +98,14 @@
         <button class="tab-btn" data-tab="reports">📊 Reports</button>
     </div>
 
-    <!-- INVENTORY TAB (simplified columns) -->
+    <!-- INVENTORY TAB -->
     <div id="inventory" class="tab-content active">
         <div class="stats">
             <div class="stat-card"><div class="stat-label">Total Cars</div><div class="stat-value" id="totalCarsCount">0</div></div>
             <div class="stat-card"><div class="stat-label">Available</div><div class="stat-value" id="availableCount">0</div></div>
             <div class="stat-card"><div class="stat-label">Sold</div><div class="stat-value" id="soldCount">0</div></div>
             <div class="stat-card"><div class="stat-label">Total Cost (¥)</div><div class="stat-value" id="totalCost">0</div></div>
+            <div class="stat-card"><div class="stat-label">Total Profit (¥)</div><div class="stat-value" id="totalProfit">0</div></div>
         </div>
         <div class="search-bar">
             <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search any field...">
@@ -117,7 +120,7 @@
         </div>
     </div>
 
-    <!-- EXPENSES TAB (unchanged) -->
+    <!-- EXPENSES TAB -->
     <div id="expenses" class="tab-content">
         <div style="margin-bottom:20px; display:flex; gap:12px;">
             <button class="btn btn-primary" id="addExpenseBtn">+ Add Expense</button>
@@ -125,21 +128,22 @@
             <button class="btn btn-outline" id="clearExpenseFilterBtn">Clear</button>
         </div>
         <div class="table-wrapper">
-            <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead><tbody id="expensesTableBody"></tbody></table>
+            <table><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount (¥)</th><th>Actions</th></tr></thead><tbody id="expensesTableBody"></tbody></td>
         </div>
     </div>
 
-    <!-- INVOICES TAB (simplified, shows seller name) -->
+    <!-- INVOICES TAB -->
     <div id="invoices" class="tab-content">
         <div class="stats"><div class="stat-card"><div class="stat-label">Total Sold Cars</div><div class="stat-value" id="totalSoldInvoices">0</div></div></div>
         <div class="table-wrapper">
-            <table><thead><tr><th>Date Sold</th><th>Make/Model</th><th>VIN</th><th>Seller Name</th><th>Total Cost (¥)</th><th>Action</th></tr></thead><tbody id="invoicesTableBody"></tbody></table>
+            <table><thead><tr><th>Date Sold</th><th>Make/Model</th><th>VIN</th><th>Seller Name</th><th>Sell Price (¥)</th><th>Action</th></tr></thead><tbody id="invoicesTableBody"></tbody></table>
         </div>
     </div>
 
-    <!-- REPORTS TAB (simplified, shows total cost instead of profit) -->
+    <!-- REPORTS TAB -->
     <div id="reports" class="tab-content">
         <div class="report-summary">
+            <div class="report-card"><div class="report-label">💰 Total Profit</div><div class="report-number" id="reportTotalProfit">¥0</div></div>
             <div class="report-card"><div class="report-label">💰 Total Car Cost</div><div class="report-number" id="reportCarCost">¥0</div></div>
             <div class="report-card"><div class="report-label">📉 Expenses</div><div class="report-number" id="reportTotalExpenses">¥0</div></div>
             <div class="report-card"><div class="report-label">📈 Net Cash Flow</div><div class="report-number" id="reportNetCashFlow">¥0</div></div>
@@ -150,10 +154,10 @@
         <canvas id="trendChart" width="400" height="200" style="max-width:100%; background:white; border-radius:16px; padding:10px;"></canvas>
         <canvas id="categoryChart" width="400" height="200" style="max-width:100%; margin-top:20px; background:white; border-radius:16px; padding:10px;"></canvas>
     </div>
-    <footer>Next Auto - Simplified management</footer>
+    <footer>Next Auto - Profit tracking enabled</footer>
 </div>
 
-<!-- Simplified Car Modal -->
+<!-- Car Modal -->
 <div id="carModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Add/Edit Car</h3>
     <div class="form-grid">
         <input type="text" id="carMakeModel" placeholder="Make & Model *">
@@ -165,15 +169,15 @@
         <input type="number" id="carCost" placeholder="Total Cost (¥) *">
         <input type="text" id="carBuyPlace" placeholder="Buy Place">
         <input type="text" id="carSellerName" placeholder="Seller Name (if sold)">
-        <!-- Status is automatically determined: if seller name is filled, status = sold; else available -->
+        <input type="number" id="carSellPrice" placeholder="Sell Price (¥) - if sold">
     </div>
     <div class="flex-btns"><button class="btn btn-outline" id="closeModalBtn">Cancel</button><button class="btn btn-primary" id="saveCarBtn">Save</button></div>
 </div></div>
 
-<!-- Invoice Modal (simplified) -->
+<!-- Invoice Modal -->
 <div id="invoiceModal" class="modal"><div class="modal-content" style="max-width:600px;"><div id="invoiceContent"></div><div class="flex-btns no-print"><button class="btn btn-outline" id="closeInvoiceBtn">Close</button><button class="btn btn-primary" id="printInvoiceBtn">Print / PDF</button></div></div></div>
 
-<!-- Expense Modal (unchanged) -->
+<!-- Expense Modal -->
 <div id="expenseModal" class="modal"><div class="modal-content"><h3>Add Expense</h3><input type="date" id="expenseDate"><input type="text" id="expenseDesc" placeholder="Description"><select id="expenseCat"><option>Rent</option><option>Repairs</option><option>Marketing</option><option>Salaries</option><option>Other</option></select><input type="number" id="expenseAmount" placeholder="Amount (¥)"><div class="flex-btns"><button class="btn btn-outline" id="closeExpenseModalBtn">Cancel</button><button class="btn btn-primary" id="saveExpenseBtn">Save</button></div></div></div>
 </div>
 
@@ -186,7 +190,7 @@
     const VALID_EMAIL = "maazq12345678@gmail.com";
     const VALID_PASSWORD = "Nextauto";
 
-    // ========== FIREBASE CONFIG (same as before) ==========
+    // ========== FIREBASE CONFIG ==========
     const firebaseConfig = {
         apiKey: "AIzaSyBNIBkueboNI7mpXw6lukweyGQruq3a_ro",
         authDomain: "new-nextauto.firebaseapp.com",
@@ -205,10 +209,10 @@
     let editMode = false, editCarId = null;
     let currentSearch = "", expenseSearchTerm = "";
 
-    // Simplified columns
-    const columns = ["Make/Model","Year","VIN","Vehicle No","Auction","Grade","Total Cost (¥)","Buy Place","Seller Name","Status","Actions"];
+    // Columns include Profit
+    const columns = ["Make/Model","Year","VIN","Vehicle No","Auction","Grade","Total Cost (¥)","Profit (¥)","Buy Place","Seller Name","Status","Actions"];
 
-    // Login handling (same)
+    // Login handling
     const overlay = document.getElementById('loginOverlay');
     const mainApp = document.getElementById('mainApp');
     const loginEmail = document.getElementById('loginEmail');
@@ -231,17 +235,19 @@
     loginBtn.addEventListener('click', checkLogin);
     loginPassword.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkLogin(); });
 
-    // ---------- Data model and listeners ----------
+    // ---------- Data listeners ----------
     function initApp() {
         db.collection("cars").onSnapshot(snapshot => {
             cars = [];
             snapshot.forEach(doc => {
                 let c = doc.data();
                 c.id = doc.id;
-                // Ensure all fields exist
                 c.cost = c.cost || 0;
+                c.sellPrice = c.sellPrice || 0;
                 c.sellerName = c.sellerName || "";
+                c.profit = (c.sellPrice && c.sellerName) ? (c.sellPrice - c.cost) : 0;
                 c.status = c.sellerName ? "sold" : "available";
+                if (!c.saleDate && c.sellerName) c.saleDate = c.saleDate || new Date().toISOString().slice(0,10);
                 cars.push(c);
             });
             renderInventory();
@@ -278,7 +284,33 @@
     }
     async function deleteExpenseFromFirestore(expId) { await db.collection("expenses").doc(expId).delete(); }
 
-    // Backup function (simplified)
+    // Sell function: prompt for seller name and sell price
+    async function sellCar(carId) {
+        const car = cars.find(c => c.id === carId);
+        if (!car || car.status === "sold") return;
+        const sellerName = prompt("Enter seller name (buyer):");
+        if (!sellerName || sellerName.trim() === "") return;
+        let sellPrice = prompt("Enter selling price (¥):");
+        if (sellPrice === null) return;
+        sellPrice = parseFloat(sellPrice);
+        if (isNaN(sellPrice) || sellPrice <= 0) {
+            alert("Invalid selling price. Action cancelled.");
+            return;
+        }
+        const profit = sellPrice - car.cost;
+        const updatedCar = {
+            ...car,
+            sellerName: sellerName.trim(),
+            sellPrice: sellPrice,
+            profit: profit,
+            status: "sold",
+            saleDate: new Date().toISOString().slice(0,10)
+        };
+        const { id, ...updateData } = updatedCar;
+        await db.collection("cars").doc(carId).set(updateData);
+    }
+
+    // Backup function
     function downloadCSV(data, filename) {
         if (data.length === 0) {
             alert(`No ${filename} data to export.`);
@@ -319,6 +351,8 @@
             auction: c.auction || "",
             grade: c.grade || "",
             cost: c.cost,
+            sellPrice: c.sellPrice || 0,
+            profit: c.profit || 0,
             buyPlace: c.buyPlace || "",
             sellerName: c.sellerName || "",
             status: c.status,
@@ -339,14 +373,22 @@
     function renderInventory() {
         const term = currentSearch.toLowerCase();
         let filtered = cars.filter(c => JSON.stringify(c).toLowerCase().includes(term));
-        document.getElementById("carsTableHead").innerHTML = `<tr>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
+        document.getElementById("carsTableHead").innerHTML = `<table>${columns.map(col => `<th>${col}</th>`).join('')}<tr>`;
         const tbody = document.getElementById("carsTableBody");
         if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="${columns.length}">No cars found</td></tr>`; updateStats(); return; }
         let html = "";
         for (let c of filtered) {
             const statusBadge = c.status === "sold" ? `<span class="badge badge-sold">SOLD</span>` : `<span class="badge badge-available">AVAILABLE</span>`;
-            let actions = `<button class="btn small-btn btn-warning" data-id="${c.id}" data-action="edit">Edit</button>
-                           <button class="btn small-btn btn-danger" data-id="${c.id}" data-action="delete">Del</button>`;
+            let profitDisplay = "—";
+            if (c.status === "sold") {
+                const profitClass = c.profit >= 0 ? "profit-positive" : "profit-negative";
+                profitDisplay = `<span class="${profitClass}">¥${c.profit.toLocaleString('ja-JP')}</span>`;
+            }
+            let actions = `<button class="btn small-btn btn-warning" data-id="${c.id}" data-action="edit">Edit</button>`;
+            if (c.status === "available") {
+                actions += `<button class="btn small-btn btn-success" data-id="${c.id}" data-action="sell">Sell</button>`;
+            }
+            actions += `<button class="btn small-btn btn-danger" data-id="${c.id}" data-action="delete">Del</button>`;
             if (c.status === "sold") actions += `<button class="btn small-btn btn-primary" data-id="${c.id}" data-action="invoice">Invoice</button>`;
             html += `<tr>
                         <td>${escapeHtml(c.makeModel)}</td>
@@ -356,11 +398,12 @@
                         <td>${escapeHtml(c.auction || "—")}</td>
                         <td>${escapeHtml(c.grade || "—")}</td>
                         <td>¥${(c.cost || 0).toLocaleString('ja-JP')}</td>
+                        <td>${profitDisplay}</td>
                         <td>${escapeHtml(c.buyPlace || "—")}</td>
                         <td>${escapeHtml(c.sellerName || "—")}</td>
                         <td>${statusBadge}</td>
                         <td class="action-buttons">${actions}</td>
-                    </tr>`;
+                    <tr>`;
         }
         tbody.innerHTML = html;
         attachInventoryEvents();
@@ -369,7 +412,8 @@
 
     function attachInventoryEvents() {
         document.querySelectorAll("[data-action='edit']").forEach(btn => btn.onclick = () => openEditModal(btn.dataset.id));
-        document.querySelectorAll("[data-action='delete']").forEach(btn => btn.onclick = () => { if(confirm("Delete?")) deleteCarFromFirestore(btn.dataset.id); });
+        document.querySelectorAll("[data-action='sell']").forEach(btn => btn.onclick = () => sellCar(btn.dataset.id));
+        document.querySelectorAll("[data-action='delete']").forEach(btn => btn.onclick = () => { if(confirm("Delete this car permanently?")) deleteCarFromFirestore(btn.dataset.id); });
         document.querySelectorAll("[data-action='invoice']").forEach(btn => btn.onclick = () => showInvoice(btn.dataset.id));
     }
 
@@ -378,16 +422,19 @@
         const avail = cars.filter(c => c.status === "available").length;
         const sold = cars.filter(c => c.status === "sold").length;
         const totalCost = cars.reduce((s,c) => s + (c.cost || 0), 0);
+        const totalProfit = cars.reduce((s,c) => s + (c.profit || 0), 0);
         document.getElementById("totalCarsCount").innerText = total;
         document.getElementById("availableCount").innerText = avail;
         document.getElementById("soldCount").innerText = sold;
         document.getElementById("totalCost").innerText = totalCost.toLocaleString('ja-JP');
+        document.getElementById("totalProfit").innerText = totalProfit.toLocaleString('ja-JP');
     }
 
     function renderExpenses() {
         let filtered = expenses.filter(e => expenseSearchTerm === "" || e.desc.toLowerCase().includes(expenseSearchTerm));
         const tbody = document.getElementById("expensesTableBody");
-        if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5">No expenses found.</td></tr>`; return; }
+        if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5">No expenses found. Click + Add Expense to create one.`);
+            return; }
         let html = "";
         for (let e of filtered) {
             html += `<tr>
@@ -406,7 +453,8 @@
         const soldCars = cars.filter(c => c.status === "sold");
         document.getElementById("totalSoldInvoices").innerText = soldCars.length;
         const tbody = document.getElementById("invoicesTableBody");
-        if (soldCars.length === 0) { tbody.innerHTML = `<tr><td colspan="6">No sold cars</td></tr>`; return; }
+        if (soldCars.length === 0) { tbody.innerHTML = `<tr><td colspan="6">No sold cars`,
+            return; }
         let html = "";
         for (let c of soldCars) {
             html += `<tr>
@@ -414,7 +462,7 @@
                         <td>${escapeHtml(c.makeModel)} (${escapeHtml(c.year)})</td>
                         <td>${escapeHtml(c.vin)}</td>
                         <td>${escapeHtml(c.sellerName || "—")}</td>
-                        <td>¥${(c.cost || 0).toLocaleString('ja-JP')}</td>
+                        <td>¥${(c.sellPrice || 0).toLocaleString('ja-JP')}</td>
                         <td><button class="btn small-btn btn-primary" data-id="${c.id}" data-action="viewInvoice">View Invoice</button></td>
                     </tr>`;
         }
@@ -425,15 +473,17 @@
     function showInvoice(carId) {
         const car = cars.find(c => c.id === carId);
         if (!car || car.status !== "sold") return;
-        const invoiceHtml = `<div class="invoice-container"><div class="invoice-header"><h2>Next Auto</h2><p>〒455-0873 愛知県名古屋市港区春田野1丁目102番地<br>📞 0526556434 &nbsp; ✉️ Next.auto222@gmail.com</p><h3>INVOICE</h3><p>Invoice No: ${car.id.slice(-8)}<br>Date: ${new Date().toLocaleDateString('ja-JP')}</p></div><div class="invoice-details"><p><strong>Seller Name:</strong> ${escapeHtml(car.sellerName)}</p><p><strong>Vehicle:</strong> ${escapeHtml(car.makeModel)} (${escapeHtml(car.year)})</p><p><strong>VIN:</strong> ${escapeHtml(car.vin)} &nbsp; | &nbsp; <strong>Vehicle No:</strong> ${escapeHtml(car.vehicleNo)}</p><p><strong>Grade:</strong> ${escapeHtml(car.grade)}</p><p><strong>Buy Place:</strong> ${escapeHtml(car.buyPlace)}</p><p><strong>Sold Date:</strong> ${car.saleDate || "—"}</p></div><table class="invoice-items"><thead><tr><th>Description</th><th>Amount (¥)</th></tr></thead><tbody><tr><td>Total Cost</td><td>¥${(car.cost || 0).toLocaleString('ja-JP')}</td></tr></tbody></table><div class="invoice-total"><p>Total: ¥${(car.cost || 0).toLocaleString('ja-JP')}</p></div><hr><p><em>Thank you for your business!</em></p></div>`;
+        const invoiceHtml = `<div class="invoice-container"><div class="invoice-header"><h2>Next Auto</h2><p>〒455-0873 愛知県名古屋市港区春田野1丁目102番地<br>📞 0526556434 &nbsp; ✉️ Next.auto222@gmail.com</p><h3>INVOICE</h3><p>Invoice No: ${car.id.slice(-8)}<br>Date: ${new Date().toLocaleDateString('ja-JP')}</p></div><div class="invoice-details"><p><strong>Seller Name:</strong> ${escapeHtml(car.sellerName)}</p><p><strong>Vehicle:</strong> ${escapeHtml(car.makeModel)} (${escapeHtml(car.year)})</p><p><strong>VIN:</strong> ${escapeHtml(car.vin)} &nbsp; | &nbsp; <strong>Vehicle No:</strong> ${escapeHtml(car.vehicleNo)}</p><p><strong>Grade:</strong> ${escapeHtml(car.grade)}</p><p><strong>Buy Place:</strong> ${escapeHtml(car.buyPlace)}</p><p><strong>Sell Price:</strong> ¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</p><p><strong>Profit:</strong> ¥${(car.profit || 0).toLocaleString('ja-JP')}</p><p><strong>Sold Date:</strong> ${car.saleDate || "—"}</p></div><table class="invoice-items"><thead><tr><th>Description</th><th>Amount (¥)</th></tr></thead><tbody><tr><td>Selling Price</td><td>¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</td></tr><tr><td>Total Cost</td><td>¥${(car.cost || 0).toLocaleString('ja-JP')}</td></tr><tr><td><strong>Profit</strong></td><td><strong>¥${(car.profit || 0).toLocaleString('ja-JP')}</strong></td></tr></tbody></table><div class="invoice-total"><p>Total: ¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</p></div><hr><p><em>Thank you for your business!</em></p></div>`;
         document.getElementById("invoiceContent").innerHTML = invoiceHtml;
         document.getElementById("invoiceModal").style.display = "flex";
     }
 
     function renderReports() {
+        const totalProfit = cars.reduce((s,c) => s + (c.profit || 0), 0);
         const totalCost = cars.reduce((s,c) => s + (c.cost || 0), 0);
         const totalExp = expenses.reduce((s,e) => s + e.amount, 0);
-        const netCashFlow = totalCost - totalExp; // negative means expenses exceed car costs
+        const netCashFlow = totalProfit - totalExp;  // profit minus expenses
+        document.getElementById("reportTotalProfit").innerHTML = `¥${totalProfit.toLocaleString('ja-JP')}`;
         document.getElementById("reportCarCost").innerHTML = `¥${totalCost.toLocaleString('ja-JP')}`;
         document.getElementById("reportTotalExpenses").innerHTML = `¥${totalExp.toLocaleString('ja-JP')}`;
         document.getElementById("reportNetCashFlow").innerHTML = `¥${netCashFlow.toLocaleString('ja-JP')}`;
@@ -443,14 +493,14 @@
     function updateCharts() {
         const last30 = [];
         for (let i=29; i>=0; i--) { let d=new Date(); d.setDate(d.getDate()-i); last30.push(d.toISOString().slice(0,10)); }
-        let costArr = new Array(30).fill(0);
+        let profitArr = new Array(30).fill(0);
         let expArr = new Array(30).fill(0);
         for (let exp of expenses) { let idx = last30.indexOf(exp.date); if(idx !== -1) expArr[idx] += exp.amount; }
-        for (let c of cars) { if(c.status === "sold" && c.saleDate) { let idx = last30.indexOf(c.saleDate); if(idx !== -1) costArr[idx] += c.cost; } }
+        for (let c of cars) { if(c.status === "sold" && c.saleDate) { let idx = last30.indexOf(c.saleDate); if(idx !== -1) profitArr[idx] += c.profit; } }
         const labels = last30.map(d => d.slice(5));
         const ctx = document.getElementById("trendChart").getContext("2d");
         if(profitChart) profitChart.destroy();
-        profitChart = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:'Car Costs (¥)', data:costArr, borderColor:'#2b6e4e', fill:false }, { label:'Expenses (¥)', data:expArr, borderColor:'#b23c1c', fill:false }] } });
+        profitChart = new Chart(ctx, { type:'line', data:{ labels, datasets:[{ label:'Car Profit (¥)', data:profitArr, borderColor:'#2b6e4e', fill:false }, { label:'Expenses (¥)', data:expArr, borderColor:'#b23c1c', fill:false }] } });
         const catMap = new Map(); expenses.forEach(e => catMap.set(e.category, (catMap.get(e.category)||0) + e.amount));
         const ctx2 = document.getElementById("categoryChart").getContext("2d");
         if(categoryChart) categoryChart.destroy();
@@ -468,6 +518,7 @@
         document.getElementById("carCost").value = car.cost || "";
         document.getElementById("carBuyPlace").value = car.buyPlace || "";
         document.getElementById("carSellerName").value = car.sellerName || "";
+        document.getElementById("carSellPrice").value = car.sellPrice || "";
     }
 
     function openEditModal(carId) {
@@ -486,7 +537,12 @@
         const vin = document.getElementById("carVin").value.trim();
         const cost = parseFloat(document.getElementById("carCost").value);
         if (!makeModel || !year || !vin || isNaN(cost) || cost <= 0) { alert("Make/Model, Year, VIN, and Total Cost are required."); return; }
-        const sellerName = document.getElementById("carSellerName").value.trim();
+        let sellerName = document.getElementById("carSellerName").value.trim();
+        let sellPrice = parseFloat(document.getElementById("carSellPrice").value);
+        if (isNaN(sellPrice)) sellPrice = 0;
+        let profit = (sellerName && sellPrice > 0) ? sellPrice - cost : 0;
+        let status = (sellerName && sellPrice > 0) ? "sold" : "available";
+        let saleDate = (status === "sold") ? (new Date().toISOString().slice(0,10)) : "";
         const carData = {
             makeModel, year, vin,
             vehicleNo: document.getElementById("carVehicleNo").value.trim(),
@@ -495,24 +551,28 @@
             cost: cost,
             buyPlace: document.getElementById("carBuyPlace").value.trim(),
             sellerName: sellerName,
-            status: sellerName ? "sold" : "available",
-            saleDate: sellerName ? (new Date().toISOString().slice(0,10)) : ""
+            sellPrice: sellPrice,
+            profit: profit,
+            status: status,
+            saleDate: saleDate
         };
         if (editMode && editCarId) {
             const oldCar = cars.find(c => c.id === editCarId);
-            if (!sellerName && oldCar.sellerName) {
-                // If removing seller name, reset saleDate and status
-                carData.status = "available";
+            if (status === "available" && oldCar.status === "sold") {
+                // If removing sell info, reset profit and saleDate
+                carData.sellerName = "";
+                carData.sellPrice = 0;
+                carData.profit = 0;
                 carData.saleDate = "";
-            } else if (sellerName && !oldCar.sellerName) {
-                // New sold, set saleDate
+                carData.status = "available";
+            } else if (status === "sold" && oldCar.status === "available") {
+                // newly sold, ensure saleDate is set
                 carData.saleDate = new Date().toISOString().slice(0,10);
             } else {
                 carData.saleDate = oldCar.saleDate || "";
             }
             await saveCarToFirestore(carData, true, editCarId);
         } else {
-            if (sellerName) carData.saleDate = new Date().toISOString().slice(0,10);
             await saveCarToFirestore(carData, false);
         }
         closeModal();
