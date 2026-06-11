@@ -78,7 +78,7 @@
     </div>
 </div>
 
-<!-- MAIN APP -->
+<!-- MAIN APP (hidden until login) -->
 <div id="mainApp" style="display:none;">
 <div class="container">
     <div class="company-header">
@@ -136,7 +136,7 @@
     <div id="invoices" class="tab-content">
         <div class="stats"><div class="stat-card"><div class="stat-label">Total Sold Cars</div><div class="stat-value" id="totalSoldInvoices">0</div></div></div>
         <div class="table-wrapper">
-            <tr><thead><tr><th>Date Sold</th><th>Make/Model</th><th>VIN</th><th>Seller Name</th><th>Sell Price (¥)</th><th>Action</th></tr></thead><tbody id="invoicesTableBody"></tbody></table>
+            </table><thead><tr><th>Date Sold</th><th>Make/Model</th><th>VIN</th><th>Seller Name</th><th>Sell Price (¥)</th><th>Action</th></tr></thead><tbody id="invoicesTableBody"></tbody></table>
         </div>
     </div>
 
@@ -184,7 +184,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-    // ========== YOUR FIREBASE CONFIG (verify it matches your project) ==========
+    // ========== HARDCODED LOGIN (change if needed) ==========
+    const VALID_EMAIL = "maazq12345678@gmail.com";
+    const VALID_PASSWORD = "Nextauto";
+
+    // ========== FIREBASE CONFIG (your existing project) ==========
     const firebaseConfig = {
         apiKey: "AIzaSyBNIBkueboNI7mpXw6lukweyGQruq3a_ro",
         authDomain: "new-nextauto.firebaseapp.com",
@@ -197,10 +201,6 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
-    // ========== HARDCODED LOGIN (same as before) ==========
-    const VALID_EMAIL = "maazq12345678@gmail.com";
-    const VALID_PASSWORD = "Nextauto";
 
     let cars = [], expenses = [];
     let profitChart = null, categoryChart = null;
@@ -374,9 +374,9 @@
     function renderInventory() {
         const term = currentSearch.toLowerCase();
         let filtered = cars.filter(c => JSON.stringify(c).toLowerCase().includes(term));
-        document.getElementById("carsTableHead").innerHTML = `<table>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
+        document.getElementById("carsTableHead").innerHTML = `</td>${columns.map(col => `<th>${col}</th>`).join('')}</tr>`;
         const tbody = document.getElementById("carsTableBody");
-        if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="${columns.length}">No cars found. Add one or check Firestore.</td></tr>`; updateStats(); return; }
+        if (filtered.length === 0) { tbody.innerHTML = `<table><td colspan="${columns.length}">No cars found. Add one or check Firestore.</td></td>`; updateStats(); return; }
         let html = "";
         for (let c of filtered) {
             const statusBadge = c.status === "sold" ? `<span class="badge badge-sold">SOLD</span>` : `<span class="badge badge-available">AVAILABLE</span>`;
@@ -434,7 +434,7 @@
     function renderExpenses() {
         let filtered = expenses.filter(e => expenseSearchTerm === "" || e.desc.toLowerCase().includes(expenseSearchTerm));
         const tbody = document.getElementById("expensesTableBody");
-        if (filtered.length === 0) { tbody.innerHTML = `<tr><td colspan="5">No expenses found. Click + Add Expense to create one.`);
+        if (filtered.length === 0) { tbody.innerHTML = `<table><td colspan="5">No expenses found. Click + Add Expense to create one.`);
             return; }
         let html = "";
         for (let e of filtered) {
@@ -454,7 +454,7 @@
         const soldCars = cars.filter(c => c.status === "sold");
         document.getElementById("totalSoldInvoices").innerText = soldCars.length;
         const tbody = document.getElementById("invoicesTableBody");
-        if (soldCars.length === 0) { tbody.innerHTML = `<tr><td colspan="6">No sold cars`,
+        if (soldCars.length === 0) { tbody.innerHTML = `<table><td colspan="6">No sold cars`,
             return; }
         let html = "";
         for (let c of soldCars) {
@@ -474,7 +474,7 @@
     function showInvoice(carId) {
         const car = cars.find(c => c.id === carId);
         if (!car || car.status !== "sold") return;
-        const invoiceHtml = `<div class="invoice-container"><div class="invoice-header"><h2>Next Auto</h2><p>〒455-0873 愛知県名古屋市港区春田野1丁目102番地<br>📞 0526556434 &nbsp; ✉️ Next.auto222@gmail.com</p><h3>INVOICE</h3><p>Invoice No: ${car.id.slice(-8)}<br>Date: ${new Date().toLocaleDateString('ja-JP')}</p></div><div class="invoice-details"><p><strong>Seller Name:</strong> ${escapeHtml(car.sellerName)}</p><p><strong>Vehicle:</strong> ${escapeHtml(car.makeModel)} (${escapeHtml(car.year)})</p><p><strong>VIN:</strong> ${escapeHtml(car.vin)} &nbsp; | &nbsp; <strong>Vehicle No:</strong> ${escapeHtml(car.vehicleNo)}</p><p><strong>Grade:</strong> ${escapeHtml(car.grade)}</p><p><strong>Buy Place:</strong> ${escapeHtml(car.buyPlace)}</p><p><strong>Sell Price:</strong> ¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</p><p><strong>Profit:</strong> ¥${(car.profit || 0).toLocaleString('ja-JP')}</p><p><strong>Sold Date:</strong> ${car.saleDate || "—"}</p></div><table class="invoice-items"><thead><tr><th>Description</th><th>Amount (¥)</th></tr></thead><tbody><tr><td>Selling Price</td><td>¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</td><tr><td>Total Cost</td><td>¥${(car.cost || 0).toLocaleString('ja-JP')}</td><tr><td><strong>Profit</strong></td><td><strong>¥${(car.profit || 0).toLocaleString('ja-JP')}</strong></td></tr></tbody><td><div class="invoice-total"><p>Total: ¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</p></div><hr><p><em>Thank you for your business!</em></p></div>`;
+        const invoiceHtml = `<div class="invoice-container"><div class="invoice-header"><h2>Next Auto</h2><p>〒455-0873 愛知県名古屋市港区春田野1丁目102番地<br>📞 0526556434 &nbsp; ✉️ Next.auto222@gmail.com</p><h3>INVOICE</h3><p>Invoice No: ${car.id.slice(-8)}<br>Date: ${new Date().toLocaleDateString('ja-JP')}</p></div><div class="invoice-details"><p><strong>Seller Name:</strong> ${escapeHtml(car.sellerName)}</p><p><strong>Vehicle:</strong> ${escapeHtml(car.makeModel)} (${escapeHtml(car.year)})</p><p><strong>VIN:</strong> ${escapeHtml(car.vin)} &nbsp; | &nbsp; <strong>Vehicle No:</strong> ${escapeHtml(car.vehicleNo)}</p><p><strong>Grade:</strong> ${escapeHtml(car.grade)}</p><p><strong>Buy Place:</strong> ${escapeHtml(car.buyPlace)}</p><p><strong>Sell Price:</strong> ¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</p><p><strong>Profit:</strong> ¥${(car.profit || 0).toLocaleString('ja-JP')}</p><p><strong>Sold Date:</strong> ${car.saleDate || "—"}</p></div><table class="invoice-items"><thead><tr><th>Description</th><th>Amount (¥)</th></tr></thead><tbody><tr><td>Selling Price</td><td>¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</td></tr><tr><td>Total Cost</td><td>¥${(car.cost || 0).toLocaleString('ja-JP')}</td></tr><tr><td><strong>Profit</strong></td><td><strong>¥${(car.profit || 0).toLocaleString('ja-JP')}</strong></td></tr></tbody></table><div class="invoice-total"><p>Total: ¥${(car.sellPrice || 0).toLocaleString('ja-JP')}</p></div><hr><p><em>Thank you for your business!</em></p></div>`;
         document.getElementById("invoiceContent").innerHTML = invoiceHtml;
         document.getElementById("invoiceModal").style.display = "flex";
     }
